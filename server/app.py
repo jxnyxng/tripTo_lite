@@ -12,7 +12,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 app = Flask(__name__)
 CORS(app)
 
-# Gemini API 호출 함수
+# Gemini API 호출
 def analyze_with_gemini(survey_data):
     # 설문 데이터에서 값 추출
     style = survey_data.get('q2', '')
