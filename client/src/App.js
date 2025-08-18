@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import surveyQuestions from './surveyQuestions';
 import ResultPage from './ResultPage';
 
@@ -11,8 +11,22 @@ function App() {
   const [emailSent, setEmailSent] = useState(false);
 
   // 설문 답변 변경 핸들러
-  const handleChange = (id, value) => {
-    setAnswers(prev => ({ ...prev, [id]: value }));
+  // 단일/다중 선택 핸들러
+  const handleChange = (id, value, optionType) => {
+    if (optionType === 'checkbox') {
+      setAnswers(prev => {
+        const prevArr = Array.isArray(prev[id]) ? prev[id] : [];
+        if (prevArr.includes(value)) {
+          // 선택 해제
+          return { ...prev, [id]: prevArr.filter(v => v !== value) };
+        } else {
+          // 선택 추가
+          return { ...prev, [id]: [...prevArr, value] };
+        }
+      });
+    } else {
+      setAnswers(prev => ({ ...prev, [id]: value }));
+    }
   };
 
   // 설문 제출
@@ -62,46 +76,190 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: 24 }}>
-      <h1>여행지 추천 설문</h1>
+      <div style={{
+        width: '100%',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        fontSize: '2.2em',
+        letterSpacing: '0.12em',
+        color: '#1976d2',
+        marginBottom: 32,
+        fontFamily: 'Montserrat, Arial, sans-serif',
+      }}>
+        TRIPTO
+      </div>
+      {/* <h1 style={{ textAlign: 'center', fontSize: '1.3em', marginBottom: 24 }}>여행지 추천 설문</h1> */}
       {!recommendation ? (
-        <form onSubmit={handleSurveySubmit}>
-          {surveyQuestions.map(q => (
-            <div key={q.id} style={{ marginBottom: 16 }}>
-              <label>{q.question}</label><br />
-              {q.type === 'text' && (
-                <input
-                  type="text"
-                  value={answers[q.id] || ''}
-                  onChange={e => handleChange(q.id, e.target.value)}
-                  style={{ width: '100%', padding: 8 }}
-                />
-              )}
-              {q.type === 'number' && (
-                <div style={{ display: 'flex', alignItems: 'center' }}>
+        <form onSubmit={handleSurveySubmit} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div style={{
+            width: '100%',
+            border: '1.5px solid #bcdffb',
+            borderRadius: 16,
+            boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
+            padding: '32px 24px 24px 24px',
+            marginBottom: 18,
+            background: '#fafdff',
+          }}>
+            {/* 최상단 국내/해외 체크박스(q0) - 중복 선택 가능 */}
+            {(() => {
+              const q = surveyQuestions.find(q => q.id === 'q0');
+              return (
+                <div key={q.id} style={{ marginBottom: 36, textAlign: 'center', width: '100%' }}>
+                  <label style={{ fontWeight: 'bold', fontSize: '1.13em', display: 'inline-block', marginBottom: 10 }}>{q.question}</label><br />
+                  <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', marginTop: 12 }}>
+                    {q.options.map(opt => (
+                      <label key={opt} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 120,
+                        height: 48,
+                        border: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '2px solid #1976d2' : '1px solid #ccc',
+                        borderRadius: 8,
+                        background: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '#e3f2fd' : '#fff',
+                        cursor: 'pointer',
+                        fontWeight: '500',
+                        fontSize: '1em',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                      }}>
+                        <input
+                          type="checkbox"
+                          checked={Array.isArray(answers[q.id]) ? answers[q.id].includes(opt) : false}
+                          onChange={() => handleChange(q.id, opt, q.type)}
+                          style={{ display: 'none' }}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 다지선다(checkbox) 문항(q0 제외) 렌더링 */}
+            {surveyQuestions.filter(q => q.type === 'checkbox' && q.id !== 'q0').map(q => (
+              <div key={q.id} style={{ marginBottom: 36, textAlign: 'center', width: '100%' }}>
+                <label style={{ fontWeight: 'bold', fontSize: '1.1em', display: 'inline-block', marginBottom: 8 }}>{q.question}</label><br />
+                <div style={{ display: 'flex', gap: '16px', marginTop: 12, overflowX: 'auto', justifyContent: 'center', width: '100%' }}>
+                  {q.options.map(opt => (
+                    <label key={opt} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 120,
+                      height: 48,
+                      border: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '2px solid #1976d2' : '1px solid #ccc',
+                      borderRadius: 8,
+                      background: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '#e3f2fd' : '#fff',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      fontSize: '1em',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={Array.isArray(answers[q.id]) ? answers[q.id].includes(opt) : false}
+                        onChange={() => handleChange(q.id, opt, q.type)}
+                        style={{ display: 'none' }}
+                      />
+                      <span>{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* 다지선다와 입력폼 사이 구분선 */}
+            <div style={{ width: '100%', borderTop: '1px solid #bcdffb', margin: '18px 0 24px 0' }} />
+
+            {/* 총예산(q4)과 인원수(q4_1) 입력폼을 나란히 렌더링 */}
+            <div style={{ display: 'flex', gap: '32px', justifyContent: 'center', alignItems: 'flex-start', marginBottom: 36, width: '100%' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <label style={{ display: 'inline-block', marginBottom: 14, fontWeight: 'bold', fontSize: '1.08em' }}>여행 총예산을 입력하세요.</label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <input
                     type="number"
-                    value={answers[q.id] || ''}
-                    onChange={e => handleChange(q.id, e.target.value)}
-                    style={{ width: '100%', padding: 8 }}
+                    value={answers['q4'] || ''}
+                    onChange={e => handleChange('q4', e.target.value, 'number')}
+                    style={{ width: 100, padding: '10px 8px', textAlign: 'center', borderRadius: 10, border: '1px solid #bbb', boxSizing: 'border-box' }}
                   />
                   <span style={{ marginLeft: 7 }}>만원</span>
                 </div>
-              )}
-              {q.type === 'select' && (
-                <select
-                  value={answers[q.id] || ''}
-                  onChange={e => handleChange(q.id, e.target.value)}
-                  style={{ width: '100%', padding: 8 }}
-                >
-                  <option value="">선택하세요</option>
-                  {q.options.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              )}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <label style={{ display: 'inline-block', marginBottom: 14, fontWeight: 'bold', fontSize: '1.08em' }}>여행 인원수를 입력하세요.</label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <input
+                    type="number"
+                    value={answers['q4_1'] || ''}
+                    onChange={e => handleChange('q4_1', e.target.value, 'number')}
+                    style={{ width: 100, padding: '10px 8px', textAlign: 'center', borderRadius: 10, border: '1px solid #bbb', boxSizing: 'border-box' }}
+                  />
+                  <span style={{ marginLeft: 7 }}>명</span>
+                </div>
+              </div>
             </div>
-          ))}
-          <button type="submit" disabled={loading} style={{ padding: '8px 16px' }}>
+
+            {/* 나머지 문항 렌더링 */}
+            {surveyQuestions.filter(q => q.type !== 'checkbox' && q.id !== 'q4' && q.id !== 'q4_1').map(q => (
+              <div key={q.id} style={{ marginBottom: 36, textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <label style={{ display: 'inline-block', marginBottom: 14, fontWeight: 'bold', fontSize: '1.08em' }}>{q.question}</label>
+                {q.type === 'text' && (
+                  <input
+                    type="text"
+                    value={answers[q.id] || ''}
+                    onChange={e => handleChange(q.id, e.target.value, q.type)}
+                    style={{ width: '80%', padding: '10px 8px', textAlign: 'center', marginBottom: 2, borderRadius: 7, border: '1px solid #bbb' }}
+                  />
+                )}
+                {q.type === 'number' && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '80%', marginBottom: 2 }}>
+                    <input
+                      type="number"
+                      value={answers[q.id] || ''}
+                      onChange={e => handleChange(q.id, e.target.value, q.type)}
+                      style={{ width: 120, padding: '10px 8px', textAlign: 'center', borderRadius: 7, border: '1px solid #bbb' }}
+                      min={q.min || 1}
+                      max={q.max || undefined}
+                    />
+                    <span style={{ marginLeft: 7 }}>{q.id === 'q4_1' ? '명' : (q.id === 'q11' ? '개' : '만원')}</span>
+                  </div>
+                )}
+                {q.type === 'select' && (
+                  <select
+                    value={answers[q.id] || ''}
+                    onChange={e => handleChange(q.id, e.target.value, q.type)}
+                    style={{ width: '80%', padding: '10px 8px', textAlign: 'center', marginBottom: 2, borderRadius: 7, border: '1px solid #bbb' }}
+                  >
+                    <option value="">선택하세요</option>
+                    {q.options.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: '10px 24px',
+              margin: '0 auto',
+              display: 'block',
+              background: loading ? '#90caf9' : '#1976d2',
+              color: '#fff',
+              fontWeight: 'bold',
+              fontSize: '1.08em',
+              border: 'none',
+              borderRadius: 8,
+              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.08)',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseOver={e => { if (!loading) e.target.style.background = '#1565c0'; }}
+            onMouseOut={e => { if (!loading) e.target.style.background = '#1976d2'; }}
+          >
             {loading ? '분석 중...' : '설문 제출'}
           </button>
         </form>
@@ -113,6 +271,11 @@ function App() {
           onSendEmail={handleSendEmail}
           emailSent={emailSent}
           loading={loading}
+          onReset={() => {
+            setRecommendation(null);
+            setAnswers({});
+            setEmailSent(false);
+          }}
         />
       )}
     </div>
