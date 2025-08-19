@@ -76,15 +76,15 @@ def analyze():
 def send_email():
     data = request.get_json()
     email = data.get('email')
-    result = data.get('result')
-    if not email or not result:
+    result_html = data.get('result')
+    if not email or not result_html:
         return jsonify({'success': False, 'error': '이메일과 결과가 필요합니다.'}), 400
     smtp_host = os.getenv('SMTP_HOST')
     smtp_port = int(os.getenv('SMTP_PORT', 587))
     smtp_user = os.getenv('SMTP_USER')
     smtp_pass = os.getenv('SMTP_PASS')
     try:
-        msg = MIMEText(result)
+        msg = MIMEText(result_html, 'html')
         msg['Subject'] = '여행지 추천 결과지'
         msg['From'] = smtp_user
         msg['To'] = email
@@ -93,7 +93,7 @@ def send_email():
         smtp.login(smtp_user, smtp_pass)
         smtp.sendmail(msg['From'], [msg['To']], msg.as_string())
         smtp.quit()
-        print(f"이메일 발송: {email}, 내용: {result}")
+        print(f"이메일 발송: {email}, 내용: {result_html}")
         return jsonify({'success': True})
     except Exception as e:
         print(f"이메일 발송 오류: {str(e)}")
@@ -104,4 +104,4 @@ def home():
     return '여행지 추천 서비스 백엔드 동작 중!'
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)

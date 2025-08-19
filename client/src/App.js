@@ -4,7 +4,15 @@ import ResultPage from './ResultPage';
 
 
 function App() {
-  const [answers, setAnswers] = useState({});
+  // localStorage에서 이전 설문 답변 불러오기
+  const [answers, setAnswers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tripto_answers');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [email, setEmail] = useState('');
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -13,20 +21,26 @@ function App() {
   // 설문 답변 변경 핸들러
   // 단일/다중 선택 핸들러
   const handleChange = (id, value, optionType) => {
+    let newAnswers;
     if (optionType === 'checkbox') {
-      setAnswers(prev => {
-        const prevArr = Array.isArray(prev[id]) ? prev[id] : [];
+      newAnswers = (() => {
+        const prevArr = Array.isArray(answers[id]) ? answers[id] : [];
         if (prevArr.includes(value)) {
           // 선택 해제
-          return { ...prev, [id]: prevArr.filter(v => v !== value) };
+          return { ...answers, [id]: prevArr.filter(v => v !== value) };
         } else {
           // 선택 추가
-          return { ...prev, [id]: [...prevArr, value] };
+          return { ...answers, [id]: [...prevArr, value] };
         }
-      });
+      })();
     } else {
-      setAnswers(prev => ({ ...prev, [id]: value }));
+      newAnswers = { ...answers, [id]: value };
     }
+    setAnswers(newAnswers);
+    // localStorage에 저장
+    try {
+      localStorage.setItem('tripto_answers', JSON.stringify(newAnswers));
+    } catch {}
   };
 
   // 설문 제출
@@ -71,6 +85,13 @@ function App() {
   // 이메일 입력 핸들러
   const handleEmailChange = (value) => {
     setEmail(value);
+    setEmailSent(false);
+  };
+
+  // 설문 초기화 시 localStorage도 초기화
+  const handleReset = () => {
+    setRecommendation(null);
+    setAnswers(prev => prev); // 이전 선택 유지
     setEmailSent(false);
   };
 
@@ -271,11 +292,7 @@ function App() {
           onSendEmail={handleSendEmail}
           emailSent={emailSent}
           loading={loading}
-          onReset={() => {
-            setRecommendation(null);
-            setAnswers({});
-            setEmailSent(false);
-          }}
+          onReset={handleReset}
         />
       )}
     </div>
