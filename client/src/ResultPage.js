@@ -57,34 +57,119 @@ function parseRecommendation(raw) {
 }
 
 function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSent, loading, onReset }) {
-  const cards = parseRecommendation(recommendation);
   const [selectedIdx, setSelectedIdx] = React.useState(null);
+  const [showDetail, setShowDetail] = React.useState(false);
+  const detailRef = React.useRef();
+  const cards = parseRecommendation(recommendation);
+
+  // 우측 컨텐츠 애니메이션 자연스럽게 적용
+  React.useEffect(() => {
+    if (showDetail && detailRef.current) {
+      detailRef.current.style.opacity = 0;
+      detailRef.current.style.transform = 'translateY(60px)';
+      requestAnimationFrame(() => {
+        detailRef.current.style.opacity = 1;
+        detailRef.current.style.transform = 'translateY(0)';
+      });
+    }
+  }, [showDetail]);
+  // 좌측 이동과 동시에 우측 컨텐츠 보여주기 (딜레이 없음)
+  React.useEffect(() => {
+    setShowDetail(selectedIdx !== null);
+  }, [selectedIdx]);
+
+  // 우측 컨텐츠 스타일 객체를 useState 이후, return문 바로 위에서 동적으로 생성
+  const detailBoxStyle = {
+    position: 'fixed',
+    top: '1.5vw',
+    right: '1.5vw',
+    width: 'calc(60vw - 3vw)',
+    minWidth: 480,
+    maxWidth: 1024,
+    height: 'calc(100vh - 3vw)',
+    background: '#fff',
+    borderRadius: '24px',
+    border: '2px solid #1976d2',
+    boxShadow: '0 4px 32px rgba(25,118,210,0.13)',
+    padding: '36px 32px',
+    overflowY: 'auto',
+    zIndex: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    transition: 'transform 1s cubic-bezier(.77,0,.18,1), opacity 1s cubic-bezier(.77,0,.18,1)',
+    opacity: showDetail ? 1 : 0,
+    transform: showDetail ? 'translateY(0)' : 'translateY(60px)',
+  };
+
+  // 좌측이 이동한 뒤 0.3초 후에 우측 컨텐츠 보여주기
+  React.useEffect(() => {
+    if (selectedIdx !== null) {
+      const timer = setTimeout(() => setShowDetail(true), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setShowDetail(false);
+    }
+  }, [selectedIdx]);
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', width: '100%', minHeight: 480 }}>
-      {/* 왼쪽: 카드 리스트 (슬라이드 효과) */}
-      <div style={{
-        flex: selectedIdx !== null ? '0 0 440px' : '1 1 100%',
-        transition: 'flex 0.5s cubic-bezier(.77,0,.18,1)',
-        overflow: 'hidden',
-        paddingRight: selectedIdx !== null ? 24 : 0,
-        minWidth: 0,
+    <div style={{ width: '100%', minHeight: '100vh', overflow: 'visible' }}>
+      {/* 전체 컨텐츠 래퍼: 서비스명+카드리스트 포함, 중앙→좌측 이동 */}
+      <div style={selectedIdx === null ? {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        minHeight: '100vh',
+        boxSizing: 'border-box',
+      } : {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '36.7vw',
+        minWidth: 383,
+        maxWidth: 646,
+        marginTop: '1%',
+        marginBottom: '1%',
+        height: 'calc(100vh - 2%)',
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        boxSizing: 'border-box',
+        background: 'transparent',
+        zIndex: 10,
       }}>
+        {/* 서비스 이름 */}
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 24,
-          marginTop: 12,
+          width: 420,
+          textAlign: 'center',
+          fontWeight: 'bold',
+          fontSize: '2.2em',
+          letterSpacing: '0.12em',
+          color: '#1976d2',
+          marginBottom: 32,
+          fontFamily: 'Montserrat, Arial, sans-serif',
         }}>
-          <h2 style={{ textAlign: 'center', marginBottom: 24 }}>추천 여행지 결과</h2>
-          {cards.length > 0 ? (
-            cards.map((card, idx) => (
-              <div key={idx} style={{
+          TRIPTO
+        </div>
+        <h2 style={{ textAlign: 'center', marginBottom: 24 }}>추천 여행지 결과</h2>
+        {cards.length > 0 ? (
+          cards.map((card, idx) => (
+            <div
+              key={idx}
+              ref={el => {
+                if (selectedIdx === idx && el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              style={{
                 width: 420,
                 background: '#fafdff',
                 borderRadius: 16,
-                boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
-                border: '1.5px solid #bcdffb',
+                boxShadow: selectedIdx === idx ? '0 4px 16px rgba(25,118,210,0.18)' : '0 2px 12px rgba(25,118,210,0.06)',
+                border: selectedIdx === idx ? '2.5px solid #1976d2' : '1.5px solid #bcdffb',
+                borderLeft: selectedIdx === idx ? '8px solid #1976d2' : '1.5px solid #bcdffb',
                 padding: '28px 28px 22px 28px',
                 marginBottom: 16,
                 textAlign: 'left',
@@ -93,54 +178,51 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                 flexDirection: 'column',
                 gap: '10px',
                 cursor: 'pointer',
-                transition: 'box-shadow 0.2s',
-                boxShadow: selectedIdx === idx ? '0 4px 16px rgba(25,118,210,0.18)' : '0 2px 12px rgba(25,118,210,0.06)',
+                transition: 'box-shadow 0.2s, transform 0.18s, border 0.18s',
+                transform: 'translateY(0)',
               }}
-                onClick={() => setSelectedIdx(idx)}
-              >
-                <div style={{ fontWeight: 'bold', fontSize: '1.15em', marginBottom: 8, color: '#1976d2' }}>{card.place || `여행지 ${idx+1}`}</div>
-                {card.flight && <div>항공료: <span style={{ fontWeight: 500 }}>{card.flight}</span></div>}
-                {card.hotel && <div>숙박비: <span style={{ fontWeight: 500 }}>{card.hotel}</span></div>}
-                {card.reason && <div style={{ marginTop: 8, color: '#333' }}>추천이유: {card.reason}</div>}
-              </div>
-            ))
-          ) : (
-            <div style={{ fontSize: '1.1em', color: '#888', marginTop: 32 }}>추천 결과를 가져올 수 없습니다.</div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
-            <button onClick={onReset} style={{ padding: '12px 32px', fontSize: '1.1em', borderRadius: 8, background: '#1976d2', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-              다시 추천받기
-            </button>
-          </div>
+              onClick={() => setSelectedIdx(idx)}
+              onMouseOver={e => {
+                e.currentTarget.style.transform = 'translateY(-7px)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(25,118,210,0.18)';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = selectedIdx === idx ? '0 4px 16px rgba(25,118,210,0.18)' : '0 2px 12px rgba(25,118,210,0.06)';
+              }}
+            >
+              <div style={{ fontWeight: 'bold', fontSize: '1.15em', marginBottom: 8, color: '#1976d2' }}>{card.place || `여행지 ${idx+1}`}</div>
+              {card.flight && <div>항공료: <span style={{ fontWeight: 500 }}>{card.flight}</span></div>}
+              {card.hotel && <div>숙박비: <span style={{ fontWeight: 500 }}>{card.hotel}</span></div>}
+              {card.reason && <div style={{ marginTop: 8, color: '#333' }}>추천이유: {card.reason}</div>}
+            </div>
+          ))
+        ) : (
+          <div style={{ fontSize: '1.1em', color: '#888', marginTop: 32 }}>추천 결과를 가져올 수 없습니다.</div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32, marginBottom: '2%' }}>
+          <button onClick={onReset} style={{ padding: '12px 32px', fontSize: '1.1em', borderRadius: 8, background: '#1976d2', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+            다시 추천받기
+          </button>
         </div>
       </div>
-      {/* 오른쪽: 상세 정보 영역 */}
-      <div style={{
-        flex: selectedIdx !== null ? '1 1 0%' : '0 0 0%',
-        transition: 'flex 0.5s cubic-bezier(.77,0,.18,1)',
-        background: '#fff',
-        borderLeft: selectedIdx !== null ? '2px solid #bcdffb' : 'none',
-        minWidth: selectedIdx !== null ? 320 : 0,
-        maxWidth: 600,
-        padding: selectedIdx !== null ? '36px 32px' : 0,
-        overflow: 'auto',
-        boxShadow: selectedIdx !== null ? '-2px 0 12px rgba(25,118,210,0.06)' : 'none',
-        display: selectedIdx !== null ? 'block' : 'none',
-      }}>
-        {selectedIdx !== null && cards[selectedIdx] && (
-          <div>
-            <h2 style={{ color: '#1976d2', marginBottom: 18 }}>{cards[selectedIdx].place}</h2>
-            <div style={{ fontSize: '1.08em', marginBottom: 12 }}>
-              <b>항공료:</b> {cards[selectedIdx].flight || '-'}<br />
-              <b>숙박비:</b> {cards[selectedIdx].hotel || '-'}<br />
-              <b>추천이유:</b> {cards[selectedIdx].reason || '-'}
-            </div>
-            {/* 상세 정보 컨텐츠는 추후 추가 예정 */}
-            <div style={{ marginTop: 32, color: '#888' }}>[여행지 상세 정보 영역 - 추후 컨텐츠 추가]</div>
-            <button onClick={() => setSelectedIdx(null)} style={{ marginTop: 36, padding: '10px 28px', fontSize: '1em', borderRadius: 8, background: '#1976d2', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>닫기</button>
+      {/* 오른쪽: 상세 정보 영역 (화면에 고정된 카드) */}
+      {showDetail && selectedIdx !== null && cards[selectedIdx] && (
+        <div
+          ref={detailRef}
+          style={detailBoxStyle}
+        >
+          <h2 style={{ color: '#1976d2', marginBottom: 18, fontSize: '2.25em' }}>{cards[selectedIdx].place}</h2>
+          <div style={{ fontSize: '1.08em', marginBottom: 12 }}>
+            <b>항공료:</b> {cards[selectedIdx].flight || '-'}<br />
+            <b>숙박비:</b> {cards[selectedIdx].hotel || '-'}<br />
+            <b>추천이유:</b> {cards[selectedIdx].reason || '-'}
           </div>
-        )}
-      </div>
+          {/* 상세 정보 컨텐츠는 추후 추가 예정 */}
+          <div style={{ marginTop: 32, color: '#888' }}>[여행지 상세 정보 영역 - 추후 컨텐츠 추가]</div>
+          <button onClick={() => setSelectedIdx(null)} style={{ marginTop: 36, padding: '10px 28px', fontSize: '1em', borderRadius: 8, background: '#1976d2', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 'bold', alignSelf: 'flex-end' }}>닫기</button>
+        </div>
+      )}
     </div>
   );
 }

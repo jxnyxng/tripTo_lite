@@ -4,7 +4,7 @@ import ResultPage from './ResultPage';
 
 
 function App() {
-  // localStorage에서 이전 설문 답변 불러오기
+  // 모든 useState 선언을 최상단에 위치
   const [answers, setAnswers] = useState(() => {
     try {
       const saved = localStorage.getItem('tripto_answers');
@@ -17,6 +17,13 @@ function App() {
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+
+  // useEffect는 useState 선언 이후에 위치
+  useEffect(() => {
+    if (recommendation) {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [recommendation]);
 
   // 설문 답변 변경 핸들러
   // 단일/다중 선택 핸들러
@@ -97,30 +104,22 @@ function App() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: 24 }}>
-      <div style={{
-        width: '100%',
-        textAlign: 'center',
-        fontWeight: 'bold',
-        fontSize: '2.2em',
-        letterSpacing: '0.12em',
-        color: '#1976d2',
-        marginBottom: 32,
-        fontFamily: 'Montserrat, Arial, sans-serif',
-      }}>
-        TRIPTO
-      </div>
-      {/* <h1 style={{ textAlign: 'center', fontSize: '1.3em', marginBottom: 24 }}>여행지 추천 설문</h1> */}
       {!recommendation ? (
-        <form onSubmit={handleSurveySubmit} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{
-            width: '100%',
-            border: '1.5px solid #bcdffb',
-            borderRadius: 16,
-            boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
-            padding: '32px 24px 24px 24px',
-            marginBottom: 18,
-            background: '#fafdff',
-          }}>
+        <React.Fragment>
+          {/* 서비스명 상단 표시 */}
+          <div style={{ width: '100%', textAlign: 'center', marginBottom: 28 }}>
+            <h1 style={{ fontWeight: 'bold', fontSize: '2em', color: '#1976d2', letterSpacing: '0.02em', margin: 0 }}>TripTo</h1>
+          </div>
+          <form onSubmit={handleSurveySubmit} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{
+              width: '100%',
+              border: '1.5px solid #bcdffb',
+              borderRadius: 16,
+              boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
+              padding: '32px 24px 24px 24px',
+              marginBottom: 18,
+              background: '#fafdff',
+            }}>
             {/* 최상단 국내/해외 체크박스(q0) - 중복 선택 가능 */}
             {(() => {
               const q = surveyQuestions.find(q => q.id === 'q0');
@@ -284,6 +283,7 @@ function App() {
             {loading ? '분석 중...' : '설문 제출'}
           </button>
         </form>
+      </React.Fragment>
       ) : (
         <ResultPage
           recommendation={recommendation}
