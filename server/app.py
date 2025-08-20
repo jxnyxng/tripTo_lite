@@ -43,8 +43,10 @@ def analyze_with_gemini(survey_data):
         f"모든 가격(항공료, 숙박비, 현지 사용 가능 금액 등)은 반드시 만원 단위로 반환해 주세요. 예시: 항공료:40만원, 숙박비:20만원, 현지 사용 가능 금액:300만원 등. "
         f"사용자가 추천받고 싶은 여행지 개수는 '{num_recommend}개'입니다. 반드시 가장 적절한 여행지 중 사용자가 요청한 개수만큼만 추천해 주세요. 단, 5개를 초과해서 추천하지 마세요. "
         f"만약 조건에 맞는 여행지가 없다면 '조건에 맞는 여행지가 없습니다.'라고 안내해 주세요. "
+        f"중요: 각 여행지마다 가장 가까운 주요 공항의 IATA 코드(3글자)를 반드시 포함해 주세요. 예: 도쿄→NRT, 방콕→BKK, 싱가포르→SIN 등 "
+        f"추천이유는 반드시 6줄 이상 상세하게 작성해 주세요. 해당 여행지의 특색, 사용자 선호도와의 연관성, 계절적 특징, 주요 관광지, 현지 문화, 음식 등을 포함하여 구체적이고 매력적으로 설명해 주세요. "
         f"추천 결과는 반드시 아래와 같은 JSON 배열 형식으로만 반환해 주세요. 다른 설명이나 텍스트 없이 JSON만 출력하세요.\n"
-        f"[\n  {{\n    'place': '여행지명',\n    'flight': '항공권 평균',\n    'hotel': '숙박업소 평균',\n    'reason': '추천 이유',\n    'local_price': '환율 적용 후 현지 사용 가능 금액'\n  }}, ...\n]"
+        f"[\n  {{\n    'place': '여행지명',\n    'flight': '항공권 평균',\n    'hotel': '숙박업소 평균',\n    'reason': '추천 이유 (6줄 이상 상세 작성)',\n    'local_price': '환율 적용 후 현지 사용 가능 금액',\n    'airport_code': 'IATA코드'\n  }}, ...\n]"
     )
     url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
     headers = {"Content-Type": "application/json"}
