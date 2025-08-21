@@ -775,6 +775,43 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
           padding: '20px 16px',
         }}>
           
+          {/* 여행지 클릭 안내 메시지 */}
+          {cards.length > 0 && (
+            <div style={{
+              width: '423px',
+              maxWidth: '423px',
+              background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+              border: '1.5px solid #1976d2',
+              borderRadius: 12,
+              padding: '16px',
+              marginBottom: 16,
+              textAlign: 'center',
+              boxShadow: '0 2px 8px rgba(25,118,210,0.1)'
+            }}>
+              <div style={{ 
+                fontSize: '1.1em', 
+                fontWeight: 'bold', 
+                color: '#1976d2',
+                marginBottom: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8
+              }}>
+                <span>👆</span>
+                <span>여행지 클릭 안내</span>
+              </div>
+              <p style={{ 
+                margin: 0, 
+                fontSize: '0.95em', 
+                color: '#1565c0',
+                lineHeight: 1.4
+              }}>
+                각 여행지를 클릭하시면 상세정보를 확인할 수 있습니다
+              </p>
+            </div>
+          )}
+
           {cards.length > 0 ? (
             cards.map((card, idx) => (
               <div

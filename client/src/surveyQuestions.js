@@ -13,16 +13,16 @@ const surveyQuestions = [
     min: 1
   },
   {
-    id: 'q4_1',
-    question: '여행 인원수를 입력하세요.',
-    type: 'number',
-    min: 1
-  },
-  {
     id: 'q1',
     question: '여행 목적을 선택하세요.',
     type: 'checkbox',
     options: ['휴식', '관광', '액티비티', '문화 체험', '자연 탐방']
+  },
+  {
+    id: 'q4_1',
+    question: '여행 인원수를 입력하세요.',
+    type: 'number',
+    min: 1
   },
   {
     id: 'q2',

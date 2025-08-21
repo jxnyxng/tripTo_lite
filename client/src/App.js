@@ -141,9 +141,10 @@ function App() {
       return (
         <Survey
           answers={answers}
-          onAnswerChange={handleAnswerChange}
+          setAnswers={setAnswers}
           onSubmit={handleSurveySubmit}
           loading={loading}
+          onBack={handleGoToMain}
         />
       );
     case 'result':
