@@ -153,30 +153,33 @@ export const generateEmailHTML = (cards) => {
 };
 
 // 이메일 전송 함수
-export const sendEmail = async (cards, userEmail) => {
+export const sendEmail = async (recommendation, userEmail) => {
   try {
-    const emailHTML = generateEmailHTML(cards);
+    // ResultPage의 getRecommendationHtml 함수 사용
+    const { getRecommendationHtml } = await import('../ResultPage');
+    const emailHTML = getRecommendationHtml(recommendation);
     
-    const response = await fetch('http://localhost:5000/send-email', {
+    const response = await fetch('http://localhost:5005/api/send-email', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         to: userEmail,
-        subject: '🌟 TRIPTO 맞춤형 여행지 추천 결과',
+        subject: 'TRIPTO 여행지 추천 결과',
         html: emailHTML
       })
     });
 
     if (!response.ok) {
-      throw new Error('이메일 전송에 실패했습니다.');
+      const errorData = await response.json();
+      throw new Error(errorData.error || '이메일 전송에 실패했습니다.');
     }
 
     const result = await response.json();
     return { success: true, message: '이메일이 성공적으로 전송되었습니다!' };
   } catch (error) {
     console.error('이메일 전송 오류:', error);
-    return { success: false, message: '이메일 전송 중 오류가 발생했습니다.' };
+    return { success: false, message: error.message || '이메일 전송 중 오류가 발생했습니다.' };
   }
 };

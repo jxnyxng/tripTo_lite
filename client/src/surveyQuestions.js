@@ -31,12 +31,6 @@ const surveyQuestions = [
     options: ['혼자', '가족', '친구', '연인', '기타']
   },
   {
-    id: 'q3',
-    question: '선호하는 교통수단을 선택하세요.',
-    type: 'checkbox',
-    options: ['비행기', '기차', '버스', '자가용', '배']
-  },
-  {
     id: 'q5',
     question: '여행 기간(몇 박)을 선택하세요.',
     type: 'select',

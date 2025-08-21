@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import surveyQuestions from './surveyQuestions';
 import ResultPage from './ResultPage';
-
+import MainPage from './MainPage';
+import Survey from './components/Survey';
+import useNavigation from './hooks/useNavigation';
+import { sendEmail } from './utils/emailUtils';
 
 function App() {
-  // 모든 useState 선언을 최상단에 위치
+  // 네비게이션 훅 사용
+  const { currentPage, setCurrentPage, navigateTo, setupBrowserNavigation } = useNavigation();
+  
+  // 전역 상태 관리
   const [answers, setAnswers] = useState(() => {
     try {
       const saved = localStorage.getItem('tripto_answers');
@@ -17,34 +23,24 @@ function App() {
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [savedRecommendation, setSavedRecommendation] = useState(null);
 
-  // useEffect는 useState 선언 이후에 위치
+  // 초기화 - 항상 메인 페이지에서 시작
   useEffect(() => {
-    if (recommendation) {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    }
-  }, [recommendation]);
+    setRecommendation(null);
+    setSavedRecommendation(null);
+    navigateTo('main', '/');
+  }, []); // 컴포넌트 마운트 시 한 번만 실행
+
+  // 브라우저 네비게이션 설정
+  useEffect(() => {
+    setupBrowserNavigation(recommendation, savedRecommendation, setSavedRecommendation, setRecommendation);
+  }, [recommendation, savedRecommendation]);
 
   // 설문 답변 변경 핸들러
-  // 단일/다중 선택 핸들러
-  const handleChange = (id, value, optionType) => {
-    let newAnswers;
-    if (optionType === 'checkbox') {
-      newAnswers = (() => {
-        const prevArr = Array.isArray(answers[id]) ? answers[id] : [];
-        if (prevArr.includes(value)) {
-          // 선택 해제
-          return { ...answers, [id]: prevArr.filter(v => v !== value) };
-        } else {
-          // 선택 추가
-          return { ...answers, [id]: [...prevArr, value] };
-        }
-      })();
-    } else {
-      newAnswers = { ...answers, [id]: value };
-    }
+  const handleAnswerChange = (newAnswers) => {
     setAnswers(newAnswers);
-    // localStorage에 저장
+    // localStorage 저장
     try {
       localStorage.setItem('tripto_answers', JSON.stringify(newAnswers));
     } catch {}
@@ -55,20 +51,22 @@ function App() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch('/api/analyze', {
+      const res = await fetch('http://localhost:5005/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(answers)
       });
       const data = await res.json();
       setRecommendation(data.recommendation);
+      setSavedRecommendation(null);
+      navigateTo('result', '/result');
     } catch (err) {
       alert('분석 요청 실패');
     }
     setLoading(false);
   };
 
-  // 이메일 전송
+  // 이메일 전송 (utils 사용)
   const handleSendEmail = async () => {
     if (!email) {
       alert('이메일을 입력하세요');
@@ -76,17 +74,19 @@ function App() {
     }
     setLoading(true);
     try {
-      await fetch('/api/send_email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, result: recommendation })
-      });
-      setEmailSent(true);
-      alert('이메일이 발송되었습니다!');
+      const result = await sendEmail(recommendation, email);
+      if (result.success) {
+        setEmailSent(true);
+        alert(result.message);
+      } else {
+        alert(`이메일 발송 실패: ${result.message}`);
+      }
     } catch (err) {
-      alert('이메일 발송 실패');
+      console.error('이메일 발송 오류:', err);
+      alert('이메일 발송 실패: 서버 연결 오류');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // 이메일 입력 핸들러
@@ -95,196 +95,59 @@ function App() {
     setEmailSent(false);
   };
 
-  // 설문 초기화 시 localStorage도 초기화
-  const handleReset = () => {
+  // 페이지 전환 함수들
+  const handleStartSurvey = () => {
     setRecommendation(null);
-    setAnswers(prev => prev); // 이전 선택 유지
-    setEmailSent(false);
+    setSavedRecommendation(null);
+    navigateTo('survey', '/survey');
   };
 
-  return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 24 }}>
-      {!recommendation ? (
-        <React.Fragment>
-          {/* 서비스명 상단 표시 */}
-          <div style={{ width: '100%', textAlign: 'center', marginBottom: 28 }}>
-            <h1 style={{ fontWeight: 'bold', fontSize: '2em', color: '#1976d2', letterSpacing: '0.02em', margin: 0 }}>TripTo</h1>
-          </div>
-          <form onSubmit={handleSurveySubmit} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{
-              width: '100%',
-              border: '1.5px solid #bcdffb',
-              borderRadius: 16,
-              boxShadow: '0 2px 12px rgba(25, 118, 210, 0.06)',
-              padding: '32px 24px 24px 24px',
-              marginBottom: 18,
-              background: '#fafdff',
-            }}>
-            {/* 최상단 국내/해외 체크박스(q0) - 중복 선택 가능 */}
-            {(() => {
-              const q = surveyQuestions.find(q => q.id === 'q0');
-              return (
-                <div key={q.id} style={{ marginBottom: 36, textAlign: 'center', width: '100%' }}>
-                  <label style={{ fontWeight: 'bold', fontSize: '1.13em', display: 'inline-block', marginBottom: 10 }}>{q.question}</label><br />
-                  <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', marginTop: 12 }}>
-                    {q.options.map(opt => (
-                      <label key={opt} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 120,
-                        height: 48,
-                        border: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '2px solid #1976d2' : '1px solid #ccc',
-                        borderRadius: 8,
-                        background: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '#e3f2fd' : '#fff',
-                        cursor: 'pointer',
-                        fontWeight: '500',
-                        fontSize: '1em',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                      }}>
-                        <input
-                          type="checkbox"
-                          checked={Array.isArray(answers[q.id]) ? answers[q.id].includes(opt) : false}
-                          onChange={() => handleChange(q.id, opt, q.type)}
-                          style={{ display: 'none' }}
-                        />
-                        <span>{opt}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
+  const handleGoToMain = () => {
+    const confirmLeave = window.confirm(
+      '현재 추천 결과를 확인하지 못하게 됩니다.\n' +
+      '정말로 메인 페이지로 돌아가시겠습니까?'
+    );
+    
+    if (confirmLeave) {
+      setRecommendation(null);
+      setSavedRecommendation(null);
+      navigateTo('main', '/');
+    }
+  };
 
-            {/* 다지선다(checkbox) 문항(q0 제외) 렌더링 */}
-            {surveyQuestions.filter(q => q.type === 'checkbox' && q.id !== 'q0').map(q => (
-              <div key={q.id} style={{ marginBottom: 36, textAlign: 'center', width: '100%' }}>
-                <label style={{ fontWeight: 'bold', fontSize: '1.1em', display: 'inline-block', marginBottom: 8 }}>{q.question}</label><br />
-                <div style={{ display: 'flex', gap: '16px', marginTop: 12, overflowX: 'auto', justifyContent: 'center', width: '100%' }}>
-                  {q.options.map(opt => (
-                    <label key={opt} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 120,
-                      height: 48,
-                      border: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '2px solid #1976d2' : '1px solid #ccc',
-                      borderRadius: 8,
-                      background: Array.isArray(answers[q.id]) && answers[q.id].includes(opt) ? '#e3f2fd' : '#fff',
-                      cursor: 'pointer',
-                      fontWeight: '500',
-                      fontSize: '1em',
-                      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                    }}>
-                      <input
-                        type="checkbox"
-                        checked={Array.isArray(answers[q.id]) ? answers[q.id].includes(opt) : false}
-                        onChange={() => handleChange(q.id, opt, q.type)}
-                        style={{ display: 'none' }}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
+  const handleReset = () => {
+    const confirmReset = window.confirm(
+      '현재 추천 결과와 설문 답변을 모두 초기화합니다.\n' +
+      '정말로 처음부터 다시 시작하시겠습니까?'
+    );
+    
+    if (confirmReset) {
+      setRecommendation(null);
+      setSavedRecommendation(null);
+      setAnswers({});
+      setEmailSent(false);
+      try {
+        localStorage.removeItem('tripto_answers');
+      } catch {}
+      navigateTo('main', '/');
+    }
+  };
 
-            {/* 다지선다와 입력폼 사이 구분선 */}
-            <div style={{ width: '100%', borderTop: '1px solid #bcdffb', margin: '18px 0 24px 0' }} />
-
-            {/* 총예산(q4)과 인원수(q4_1) 입력폼을 나란히 렌더링 */}
-            <div style={{ display: 'flex', gap: '32px', justifyContent: 'center', alignItems: 'flex-start', marginBottom: 36, width: '100%' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <label style={{ display: 'inline-block', marginBottom: 14, fontWeight: 'bold', fontSize: '1.08em' }}>여행 총예산을 입력하세요.</label>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <input
-                    type="number"
-                    value={answers['q4'] || ''}
-                    onChange={e => handleChange('q4', e.target.value, 'number')}
-                    style={{ width: 100, padding: '10px 8px', textAlign: 'center', borderRadius: 10, border: '1px solid #bbb', boxSizing: 'border-box' }}
-                  />
-                  <span style={{ marginLeft: 7 }}>만원</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <label style={{ display: 'inline-block', marginBottom: 14, fontWeight: 'bold', fontSize: '1.08em' }}>여행 인원수를 입력하세요.</label>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <input
-                    type="number"
-                    value={answers['q4_1'] || ''}
-                    onChange={e => handleChange('q4_1', e.target.value, 'number')}
-                    style={{ width: 100, padding: '10px 8px', textAlign: 'center', borderRadius: 10, border: '1px solid #bbb', boxSizing: 'border-box' }}
-                  />
-                  <span style={{ marginLeft: 7 }}>명</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 나머지 문항 렌더링 */}
-            {surveyQuestions.filter(q => q.type !== 'checkbox' && q.id !== 'q4' && q.id !== 'q4_1').map(q => (
-              <div key={q.id} style={{ marginBottom: 36, textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <label style={{ display: 'inline-block', marginBottom: 14, fontWeight: 'bold', fontSize: '1.08em' }}>{q.question}</label>
-                {q.type === 'text' && (
-                  <input
-                    type="text"
-                    value={answers[q.id] || ''}
-                    onChange={e => handleChange(q.id, e.target.value, q.type)}
-                    style={{ width: '80%', padding: '10px 8px', textAlign: 'center', marginBottom: 2, borderRadius: 7, border: '1px solid #bbb' }}
-                  />
-                )}
-                {q.type === 'number' && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '80%', marginBottom: 2 }}>
-                    <input
-                      type="number"
-                      value={answers[q.id] || ''}
-                      onChange={e => handleChange(q.id, e.target.value, q.type)}
-                      style={{ width: 120, padding: '10px 8px', textAlign: 'center', borderRadius: 7, border: '1px solid #bbb' }}
-                      min={q.min || 1}
-                      max={q.max || undefined}
-                    />
-                    <span style={{ marginLeft: 7 }}>{q.id === 'q4_1' ? '명' : (q.id === 'q11' ? '개' : '만원')}</span>
-                  </div>
-                )}
-                {q.type === 'select' && (
-                  <select
-                    value={answers[q.id] || ''}
-                    onChange={e => handleChange(q.id, e.target.value, q.type)}
-                    style={{ width: '80%', padding: '10px 8px', textAlign: 'center', marginBottom: 2, borderRadius: 7, border: '1px solid #bbb' }}
-                  >
-                    <option value="">선택하세요</option>
-                    {q.options.map(opt => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            ))}
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              padding: '10px 24px',
-              margin: '0 auto',
-              display: 'block',
-              background: loading ? '#90caf9' : '#1976d2',
-              color: '#fff',
-              fontWeight: 'bold',
-              fontSize: '1.08em',
-              border: 'none',
-              borderRadius: 8,
-              boxShadow: '0 2px 8px rgba(25, 118, 210, 0.08)',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
-            }}
-            onMouseOver={e => { if (!loading) e.target.style.background = '#1565c0'; }}
-            onMouseOut={e => { if (!loading) e.target.style.background = '#1976d2'; }}
-          >
-            {loading ? '분석 중...' : '설문 제출'}
-          </button>
-        </form>
-      </React.Fragment>
-      ) : (
+  // 페이지 렌더링 - 정상 로직 복원
+  console.log('현재 페이지:', currentPage); // 디버깅용
+  
+  switch (currentPage) {
+    case 'survey':
+      return (
+        <Survey
+          answers={answers}
+          onAnswerChange={handleAnswerChange}
+          onSubmit={handleSurveySubmit}
+          loading={loading}
+        />
+      );
+    case 'result':
+      return (
         <ResultPage
           recommendation={recommendation}
           email={email}
@@ -293,10 +156,13 @@ function App() {
           emailSent={emailSent}
           loading={loading}
           onReset={handleReset}
+          onGoToMain={handleGoToMain}
+          surveyData={answers}
         />
-      )}
-    </div>
-  );
+      );
+    default:
+      return <MainPage onStartSurvey={handleStartSurvey} />;
+  }
 }
 
 export default App;
