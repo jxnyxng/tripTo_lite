@@ -108,23 +108,36 @@ function getRecommendationHtml(recommendation) {
                 <div style="padding: 25px;">
                   <!-- 비용 정보 -->
                   <div class="cost-breakdown">
-                    <h3 style="margin: 0 0 15px 0; color: #1976d2;">💰 예상 비용 (최저가 기준)</h3>
-                    <div class="cost-item">
-                      <span>항공료 (1인, 왕복):</span>
-                      <span class="price-info">${flightCost ? flightCost + '만원' : '정보없음'}</span>
-                    </div>
-                    <div class="cost-item">
-                      <span>숙박비 (1인, 1박):</span>
-                      <span class="price-info">${hotelCostPerNight ? hotelCostPerNight + '만원' : '정보없음'}</span>
-                    </div>
-                    <div class="cost-item">
-                      <span>숙박비 (1인, 3박):</span>
-                      <span class="price-info">${hotelCost3Nights ? hotelCost3Nights + '만원' : '정보없음'}</span>
-                    </div>
-                    <div class="cost-item cost-total">
-                      <span>총 비용 (1인 기준):</span>
-                      <span>${totalCost ? totalCost + '만원' : '정보없음'}</span>
-                    </div>
+                    <h3 style="margin: 0 0 15px 0; color: #1976d2;">💰 예상 비용</h3>
+                    ${card.total_cost ? `
+                      <div class="cost-item cost-total">
+                        <span>총 예상 비용:</span>
+                        <span style="font-weight: bold; color: #e91e63;">${card.total_cost}</span>
+                      </div>
+                      ${card.local_price ? `
+                        <div class="cost-item">
+                          <span>현지 사용 가능 금액:</span>
+                          <span class="price-info">${card.local_price}</span>
+                        </div>
+                      ` : ''}
+                    ` : `
+                      <div class="cost-item">
+                        <span>항공료 (1인, 왕복):</span>
+                        <span class="price-info">${flightCost ? flightCost + '만원' : '정보없음'}</span>
+                      </div>
+                      <div class="cost-item">
+                        <span>숙박비 (1인, 1박):</span>
+                        <span class="price-info">${hotelCostPerNight ? hotelCostPerNight + '만원' : '정보없음'}</span>
+                      </div>
+                      <div class="cost-item">
+                        <span>숙박비 (1인, 3박):</span>
+                        <span class="price-info">${hotelCost3Nights ? hotelCost3Nights + '만원' : '정보없음'}</span>
+                      </div>
+                      <div class="cost-item cost-total">
+                        <span>총 비용 (1인 기준):</span>
+                        <span>${totalCost ? totalCost + '만원' : '정보없음'}</span>
+                      </div>
+                    `}
                   </div>
 
                   <!-- 추천 이유 -->
@@ -257,7 +270,9 @@ function parseRecommendation(raw) {
           flight: card.flight || card.항공료 || '',
           hotel: card.hotel || card.숙박비 || card.accommodation || '',
           reason: card.reason || card.추천이유 || card.description || '',
-          airport_code: card.airport_code || card.iata || ''
+          airport_code: card.airport_code || card.iata || '',
+          local_price: card.local_price || card.현지사용금액 || '',
+          total_cost: card.total_cost || card.총비용 || card.총예상비용 || ''
         }));
         
         console.log('[파싱 성공] 정규화된 카드:', normalizedCards);
@@ -326,7 +341,15 @@ function parseRecommendation(raw) {
                        block.match(/이유[:\s]*([^]*?)(?=\n|항공|숙박|$)/);
     const reason = reasonMatch ? reasonMatch[1].replace(/\*\s+/g, '').replace(/\n+/g, ' ').trim() : '';
     
-    return { place, flight, hotel, reason };
+    const localPriceMatch = block.match(/현지\s*사용\s*[가능금액]?\s*[:\s]*([^\n]+)/) ||
+                           block.match(/현지\s*[금액비용]?\s*[:\s]*([^\n]+)/);
+    const local_price = localPriceMatch ? localPriceMatch[1].trim() : '';
+    
+    const totalCostMatch = block.match(/총\s*[예상]?\s*비용\s*[:\s]*([^\n]+)/) ||
+                          block.match(/총[계액]?\s*[:\s]*([^\n]+)/);
+    const total_cost = totalCostMatch ? totalCostMatch[1].trim() : '';
+    
+    return { place, flight, hotel, reason, local_price, total_cost };
   });
   
   const validCards = tempCards.filter(card => card.place && card.place !== '');
@@ -496,6 +519,23 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
   // 설문 데이터에서 필요한 정보 추출
   const nights = surveyData?.q5 || '3박'; // 여행 기간
   const totalPeople = parseInt(surveyData?.q4_1) || 1; // 총 인원수
+  const userBudget = parseInt(surveyData?.q4) || 0; // 사용자 예산 (만원)
+  
+  // 예산 검증 함수
+  const checkBudgetExceeded = (card) => {
+    if (!userBudget) return false;
+    
+    // 서버 제공 총 비용이 있는 경우
+    if (card.total_cost) {
+      const totalCostMatch = card.total_cost.match(/(\d+(?:\.\d+)?)/);
+      const totalCost = totalCostMatch ? parseFloat(totalCostMatch[1]) : 0;
+      return totalCost > userBudget;
+    }
+    
+    // 클라이언트 계산 비용 사용
+    const costs = calculateCosts(card);
+    return costs.totalCost > userBudget;
+  };
   
   // 비용 계산 함수
   const calculateCosts = (card) => {
@@ -537,7 +577,7 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
   };
 
   //동반자 정보로 잘 안나옴 영상이 없는 걸수도.....
-  
+
   // YouTube 비디오 검색 함수
   const searchYouTubeVideos = async (destination) => {
     if (youtubeVideos[destination]) {
@@ -883,15 +923,82 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                     </div>
                   );
                 })()}
-                {(card.flight || card.hotel) && (() => {
-                  const costs = calculateCosts(card);
-                  return (
-                    <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #eee', fontSize: '0.95em' }}>
-                      총 비용: <span style={{ fontWeight: 'bold', color: '#e91e63' }}>
-                        {costs.totalCost}만원
-                      </span> ({costs.people}명 기준)
-                    </div>
-                  );
+                {(card.flight || card.hotel || card.total_cost) && (() => {
+                  const isBudgetExceeded = checkBudgetExceeded(card);
+                  
+                  // 제미나이가 제공한 total_cost를 우선 사용
+                  if (card.total_cost) {
+                    return (
+                      <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #eee', fontSize: '0.95em' }}>
+                        <div style={{ 
+                          fontWeight: 'bold', 
+                          color: isBudgetExceeded ? '#ff5722' : '#e91e63',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          💰 총 예상 비용: {card.total_cost}
+                          {isBudgetExceeded && userBudget > 0 && (
+                            <span style={{ 
+                              fontSize: '0.8em', 
+                              backgroundColor: '#ff5722', 
+                              color: 'white', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px' 
+                            }}>
+                              예산 초과
+                            </span>
+                          )}
+                        </div>
+                        {userBudget > 0 && (
+                          <div style={{ fontSize: '0.85em', color: '#666', marginTop: 2 }}>
+                            설정 예산: {userBudget}만원
+                          </div>
+                        )}
+                        {card.local_price && (
+                          <div style={{ fontSize: '0.9em', color: '#666', marginTop: 4 }}>
+                            현지 사용 가능 금액: {card.local_price}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  
+                  // total_cost가 없는 경우에만 클라이언트 계산 사용 (fallback)
+                  if (card.flight || card.hotel) {
+                    const costs = calculateCosts(card);
+                    return (
+                      <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid #eee', fontSize: '0.95em' }}>
+                        <div style={{ 
+                          fontWeight: 'bold', 
+                          color: isBudgetExceeded ? '#ff5722' : '#e91e63',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}>
+                          총 비용: {costs.totalCost}만원 ({costs.people}명 기준)
+                          {isBudgetExceeded && userBudget > 0 && (
+                            <span style={{ 
+                              fontSize: '0.8em', 
+                              backgroundColor: '#ff5722', 
+                              color: 'white', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px' 
+                            }}>
+                              예산 초과
+                            </span>
+                          )}
+                        </div>
+                        {userBudget > 0 && (
+                          <div style={{ fontSize: '0.85em', color: '#666', marginTop: 2 }}>
+                            설정 예산: {userBudget}만원
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  
+                  return null;
                 })()}
                 {card.reason && (
                   <div style={{ marginTop: 8, color: '#333', fontSize: '0.95em' }}>
@@ -1046,10 +1153,64 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                     overflow: 'auto'
                   }}>
                     {(() => {
-                      const costs = calculateCosts(cards[selectedIdx]);
+                      const selectedCard = cards[selectedIdx];
+                      const costs = calculateCosts(selectedCard);
                       const nights = surveyData?.q5 || '3박';
                       const people = costs.people;
+                      const isBudgetExceeded = checkBudgetExceeded(selectedCard);
                       
+                      // 제미나이가 제공한 total_cost가 있으면 우선 사용
+                      if (selectedCard.total_cost) {
+                        return (
+                          <>
+                            {selectedCard.local_price && (
+                              <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '6px' }}>
+                                <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>현지 사용 가능 금액</div>
+                                <div style={{ fontWeight: 'bold', color: '#1976d2' }}>
+                                  {selectedCard.local_price}
+                                </div>
+                              </div>
+                            )}
+                            <div style={{ 
+                              padding: '8px', 
+                              backgroundColor: isBudgetExceeded ? '#ffebee' : '#fce4ec', 
+                              borderRadius: '6px',
+                              border: isBudgetExceeded ? '1px solid #ff5722' : 'none'
+                            }}>
+                              <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>총 예상 비용 (제미나이 계산)</div>
+                              <div style={{ 
+                                fontSize: '1.1em', 
+                                fontWeight: 'bold', 
+                                color: isBudgetExceeded ? '#ff5722' : '#e91e63',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px'
+                              }}>
+                                {selectedCard.total_cost}
+                                {isBudgetExceeded && userBudget > 0 && (
+                                  <span style={{ 
+                                    fontSize: '0.7em', 
+                                    backgroundColor: '#ff5722', 
+                                    color: 'white', 
+                                    padding: '2px 6px', 
+                                    borderRadius: '4px' 
+                                  }}>
+                                    예산 초과
+                                  </span>
+                                )}
+                              </div>
+                              {userBudget > 0 && (
+                                <div style={{ fontSize: '0.85em', color: '#666', marginTop: '4px', textAlign: 'center' }}>
+                                  설정 예산: {userBudget}만원
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        );
+                      }
+                      
+                      // total_cost가 없으면 기존 계산 방식 사용
                       return (
                         <>
                           <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '6px' }}>
@@ -1061,11 +1222,40 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                               <b>숙박비:</b> {costs.hotelCostPerPerson}만원 <span style={{ fontSize: '0.9em', color: '#666' }}>({nights})</span>
                             </div>
                           </div>
-                          <div style={{ padding: '8px', backgroundColor: '#fce4ec', borderRadius: '6px' }}>
+                          <div style={{ 
+                            padding: '8px', 
+                            backgroundColor: isBudgetExceeded ? '#ffebee' : '#fce4ec', 
+                            borderRadius: '6px',
+                            border: isBudgetExceeded ? '1px solid #ff5722' : 'none'
+                          }}>
                             <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>총 비용 (최저가 기준)</div>
-                            <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#e91e63' }}>
+                            <div style={{ 
+                              fontSize: '1.1em', 
+                              fontWeight: 'bold', 
+                              color: isBudgetExceeded ? '#ff5722' : '#e91e63',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px'
+                            }}>
                               {costs.totalCost}만원 <span style={{ fontSize: '0.9em', color: '#666' }}>({people}명 기준)</span>
+                              {isBudgetExceeded && userBudget > 0 && (
+                                <span style={{ 
+                                  fontSize: '0.7em', 
+                                  backgroundColor: '#ff5722', 
+                                  color: 'white', 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px' 
+                                }}>
+                                  예산 초과
+                                </span>
+                              )}
                             </div>
+                            {userBudget > 0 && (
+                              <div style={{ fontSize: '0.85em', color: '#666', marginTop: '4px', textAlign: 'center' }}>
+                                설정 예산: {userBudget}만원
+                              </div>
+                            )}
                           </div>
                         </>
                       );
