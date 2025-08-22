@@ -178,42 +178,13 @@ function MainPage({ onStartSurvey }) {
       }}>
         <div style={{
           fontSize: '1.8em',
-          fontWeight: 'bold',
+          fontWeight: '800',
           color: '#1976d2',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          fontFamily: '"Poppins", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+          letterSpacing: '-0.02em'
         }} onClick={() => scrollToSection(0)}>
           TRIPTO
-        </div>
-        
-        <div style={{ display: 'flex', gap: '20px' }}>
-          <button 
-            onClick={() => scrollToSection(1)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: currentSection === 1 ? '#1976d2' : '#666',
-              fontSize: '16px',
-              cursor: 'pointer',
-              fontWeight: currentSection === 1 ? 'bold' : 'normal'
-            }}
-          >
-            이용방법
-          </button>
-          <button
-            onClick={onStartSurvey}
-            style={{
-              backgroundColor: '#1976d2',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              cursor: 'pointer'
-            }}
-          >
-            시작하기
-          </button>
         </div>
       </div>
 
@@ -224,13 +195,28 @@ function MainPage({ onStartSurvey }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #f8fbff 0%, #eef7ff 100%)',
+        background: 'linear-gradient(135deg, rgba(234, 234, 234, 0.65), rgba(250, 250, 250, 0.39)), url("https://images.unsplash.com/photo-1436491865332-7a61a109cc05?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"), linear-gradient(135deg, #f8fbff 0%, #eef7ff 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
         textAlign: 'center',
         padding: '0 20px',
-        position: 'relative',
+        paddingTop: '30px', // 네비바 고려해서 살짝 위로 올림
         boxSizing: 'border-box',
         margin: 0
       }}>
+        
+        {/* 배경 오버레이 - 텍스트 가독성을 위한 반투명 레이어 */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.3)',
+          zIndex: 1
+        }}></div>
         
         {/* 메인 콘텐츠 - 완전히 중앙 배치 */}
         <div style={{
@@ -239,16 +225,21 @@ function MainPage({ onStartSurvey }) {
           alignItems: 'center',
           justifyContent: 'center',
           maxWidth: '600px',
-          margin: '0 auto'
+          margin: '-30px auto 0 auto', // 살짝 위로 올림
+          position: 'relative',
+          zIndex: 2
         }}>
           {/* 메인 타이틀 */}
           <h1 style={{
             fontSize: '3.5em',
-            fontWeight: 'bold',
+            fontWeight: '800',
             color: '#1976d2',
             marginBottom: '20px',
             lineHeight: '1.2',
-            margin: '0 0 20px 0'
+            margin: '0 0 20px 0',
+            fontFamily: '"Poppins", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+            letterSpacing: '-0.02em',
+            textShadow: '0 2px 4px rgba(0,0,0,0.1)'
           }}>
             TRIPTO
           </h1>
@@ -315,7 +306,7 @@ function MainPage({ onStartSurvey }) {
           <div style={{
             marginTop: '30px',
             fontSize: '0.9em',
-            color: '#999'
+            color: '#2c2c2cff',
           }}>
             <p style={{ margin: '0' }}>무료 서비스 · 약 2분 소요 · 개인정보 수집 없음</p>
           </div>
@@ -327,7 +318,7 @@ function MainPage({ onStartSurvey }) {
           bottom: '30px',
           left: '50%',
           transform: 'translateX(-50%)',
-          color: '#999',
+          color: '#2c2c2cff',
           fontSize: '14px',
           display: 'flex',
           flexDirection: 'column',
@@ -338,7 +329,7 @@ function MainPage({ onStartSurvey }) {
           <div style={{
             width: '20px',
             height: '20px',
-            border: '2px solid #999',
+            border: '2px solid #272727ff',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -352,131 +343,232 @@ function MainPage({ onStartSurvey }) {
 
       {/* 두 번째 섹션 - 서비스 이용방법 */}
       <div style={{
-        height: '100vh',
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #fff8f0 0%, #fff4e6 100%)',
-        padding: '70px 20px 30px 20px',
+        background: 'linear-gradient(135deg, #ffffffff 0%, #fff4e6 100%)',
+        padding: '150px 20px 60px 20px', // 네비바 여유공간 확보
         boxSizing: 'border-box',
         position: 'relative',
         margin: 0
       }}>
         <div style={{
-          maxWidth: '800px',
+          maxWidth: '1000px',
           textAlign: 'center',
           width: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          height: '100%'
+          height: 'auto'
         }}>
-          <h2 style={{
-            fontSize: '2.5em',
-            fontWeight: 'bold',
-            color: '#1976d2',
-            margin: '0 0 40px 0'
-          }}>
-            이용방법
-          </h2>
-
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '30px',
-            marginBottom: '40px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '60px',
+            marginBottom: '60px',
             width: '100%',
-            maxWidth: '800px'
+            maxWidth: '1000px'
           }}>
             {/* 단계 1 */}
             <div style={{
+              width: '240px',
+              height: '240px',
               backgroundColor: '#fff',
-              borderRadius: '16px',
-              padding: '25px 15px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              border: '2px solid #e3f2fd'
+              borderRadius: '50%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 30px rgba(25, 118, 210, 0.2)',
+              border: '4px solid #1976d2',
+              position: 'relative',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(25, 118, 210, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(25, 118, 210, 0.2)';
             }}>
+              {/* 단계 번호 */}
               <div style={{
-                fontSize: '2.5em',
-                marginBottom: '15px'
+                position: 'absolute',
+                top: '-18px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '36px',
+                height: '36px',
+                backgroundColor: '#1976d2',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '1.2em'
+              }}>1</div>
+              
+              <div style={{
+                fontSize: '3.5em',
+                marginBottom: '12px'
               }}>📝</div>
               <h3 style={{
                 fontSize: '1.2em',
                 fontWeight: 'bold',
                 color: '#1976d2',
-                marginBottom: '12px',
-                margin: '0 0 12px 0'
-              }}>1. 설문 작성</h3>
+                marginBottom: '10px',
+                margin: '0 0 10px 0'
+              }}>설문 작성</h3>
               <p style={{
                 color: '#666',
-                lineHeight: '1.5',
+                lineHeight: '1.4',
                 fontSize: '0.95em',
-                margin: '0'
+                margin: '0',
+                textAlign: 'center', 
+                padding: '0 18px'
               }}>
-                여행 취향, 예산, 기간 등<br/>
-                간단한 질문에 답변해주세요
+                여행 취향과<br/>
+                정보를 알려주세요
               </p>
             </div>
 
             {/* 단계 2 */}
             <div style={{
+              width: '240px',
+              height: '240px',
               backgroundColor: '#fff',
-              borderRadius: '16px',
-              padding: '25px 15px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              border: '2px solid #e8f5e8'
+              borderRadius: '50%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 30px rgba(46, 125, 50, 0.2)',
+              border: '4px solid #2e7d32',
+              position: 'relative',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(46, 125, 50, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(46, 125, 50, 0.2)';
             }}>
+              {/* 단계 번호 */}
               <div style={{
-                fontSize: '2.5em',
-                marginBottom: '15px'
+                position: 'absolute',
+                top: '-18px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '36px',
+                height: '36px',
+                backgroundColor: '#2e7d32',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '1.2em'
+              }}>2</div>
+              
+              <div style={{
+                fontSize: '3.5em',
+                marginBottom: '12px'
               }}>🤖</div>
               <h3 style={{
                 fontSize: '1.2em',
                 fontWeight: 'bold',
                 color: '#2e7d32',
-                marginBottom: '12px',
-                margin: '0 0 12px 0'
-              }}>2. AI 분석</h3>
+                marginBottom: '10px',
+                margin: '0 0 10px 0'
+              }}>AI 분석</h3>
               <p style={{
                 color: '#666',
-                lineHeight: '1.5',
+                lineHeight: '1.4',
                 fontSize: '0.95em',
-                margin: '0'
+                margin: '0',
+                textAlign: 'center',
+                padding: '0 18px'
               }}>
-                AI가 사용자의 답변을 분석하여<br/>
-                맞춤형 여행지를 추천해드려요
+                맞춤형 여행지를<br/>
+                AI가 추천해드려요
               </p>
             </div>
 
-            {/* 단계 3 */}
+            {/* 단계 3 */} 
             <div style={{
+              width: '240px',
+              height: '240px',
               backgroundColor: '#fff',
-              borderRadius: '16px',
-              padding: '25px 15px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-              border: '2px solid #fff3e0'
+              borderRadius: '50%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 10px 30px rgba(255, 152, 0, 0.2)',
+              border: '4px solid #ff9800',
+              position: 'relative',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(255, 152, 0, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(255, 152, 0, 0.2)';
             }}>
+              {/* 단계 번호 */}
               <div style={{
-                fontSize: '2.5em',
-                marginBottom: '15px'
+                position: 'absolute',
+                top: '-18px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '36px',
+                height: '36px',
+                backgroundColor: '#ff9800',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '1.2em'
+              }}>3</div>
+              
+              <div style={{
+                fontSize: '3.5em',
+                marginBottom: '12px'
               }}>✈️</div>
               <h3 style={{
                 fontSize: '1.2em',
                 fontWeight: 'bold',
-                color: '#f57c00',
-                marginBottom: '12px',
-                margin: '0 0 12px 0'
-              }}>3. 여행 계획</h3>
+                color: '#ff9800',
+                marginBottom: '10px',
+                margin: '0 0 10px 0'
+              }}>맞춤 여행</h3>
               <p style={{
                 color: '#666',
-                lineHeight: '1.5',
+                lineHeight: '1.4',
                 fontSize: '0.95em',
-                margin: '0'
+                margin: '0',
+                textAlign: 'center',
+                padding: '0 18px'
               }}>
-                추천받은 여행지 정보와<br/>
-                항공권, 호텔 예약까지 한번에!
+                추천받은 여행지의<br/>
+                상세정보를 확인하세요
               </p>
             </div>
           </div>
@@ -489,16 +581,18 @@ function MainPage({ onStartSurvey }) {
               color: 'white',
               border: 'none',
               borderRadius: '12px',
-              padding: '16px 36px',
-              fontSize: '1.2em',
-              fontWeight: 'bold',
+              padding: '15px 25px',
+              fontSize: '1.3em',
+              fontWeight: '700',
               cursor: 'pointer',
               boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
               transition: 'all 0.3s ease',
-              margin: '20px 0 0 0'
+              margin: '50px 0 0 0', // 간격을 20px에서 60px로 증가
+              fontFamily: '"Poppins", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+              letterSpacing: '0.01em'
             }}
             onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.transform = 'translateY(-3px)';
               e.target.style.boxShadow = '0 8px 24px rgba(25, 118, 210, 0.4)';
             }}
             onMouseLeave={(e) => {

@@ -156,7 +156,7 @@ export const generateEmailHTML = (cards) => {
 export const sendEmail = async (recommendation, userEmail) => {
   try {
     // ResultPage의 getRecommendationHtml 함수 사용
-    const { getRecommendationHtml } = await import('../ResultPage');
+    const { getRecommendationHtml } = await import('../components/ResultPage');
     const emailHTML = getRecommendationHtml(recommendation);
     
     const response = await fetch('http://localhost:5005/api/send-email', {

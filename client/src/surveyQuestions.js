@@ -8,7 +8,7 @@ const surveyQuestions = [
   },
   {
     id: 'q4',
-    question: '여행 총예산을 입력하세요.',
+    question: '여행 총예산을 입력하세요. (만원 단위)',
     type: 'number',
     min: 1
   },

@@ -1,8 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import surveyQuestions from '../surveyQuestions';
 
 function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
   const [validationMessage, setValidationMessage] = useState('');
+  const [showNavbar, setShowNavbar] = useState(true); // 네비바 표시 상태
+  const scrollContainerRef = useRef(null); // 스크롤 컨테이너 참조
+  
+  // 스크롤 이벤트 처리 (성능 최적화 적용)
+  useEffect(() => {
+    let ticking = false; // requestAnimationFrame 플래그
+    
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            const scrollY = scrollContainerRef.current.scrollTop;
+            // 스크롤이 50px 이하일 때만 네비바 표시
+            const shouldShow = scrollY <= 50;
+            setShowNavbar(shouldShow);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      // 초기 스크롤 위치 확인
+      const initialScrollY = scrollContainer.scrollTop;
+      setShowNavbar(initialScrollY <= 50);
+      
+      // 스크롤 이벤트 리스너 등록 (passive 옵션으로 성능 향상)
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+      
+      // 컴포넌트 언마운트 시 이벤트 리스너 제거
+      return () => {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, []);
   
   // 스크롤을 상단으로 이동하는 함수
   const scrollToTop = () => {
@@ -95,6 +132,64 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
 
   return (
     <>
+      {/* 고정 네비게이션 바 - 스크롤에 따라 표시/숨김 */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '60px',
+        backgroundColor: '#fff',
+        borderBottom: '1px solid #e0e0e0',
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: '24px',
+        paddingRight: '24px',
+        zIndex: 1000,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        justifyContent: 'space-between',
+        transform: showNavbar ? 'translateY(0)' : 'translateY(-100%)',
+        transition: 'all 0.3s ease-in-out',
+        opacity: showNavbar ? 1 : 0,
+        visibility: showNavbar ? 'visible' : 'hidden',
+        pointerEvents: showNavbar ? 'auto' : 'none'
+      }}>
+        <button
+          onClick={onBack}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#1976d2',
+            fontSize: '1.2em',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            padding: '8px',
+            borderRadius: '4px',
+            transition: 'background-color 0.2s'
+          }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+        >
+          <span>←</span>
+          <span>돌아가기</span>
+        </button>
+        
+        <div style={{
+          fontSize: '1.8em',
+          fontWeight: '800',
+          color: '#1976d2',
+          fontFamily: '"Poppins", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+          letterSpacing: '-0.02em'
+        }}>
+          TRIPTO
+        </div>
+        
+        {/* 우측 빈 공간 (레이아웃 균형용) */}
+        <div style={{ width: '120px' }}></div>
+      </div>
+      
       <style>
         {`
           @keyframes shake {
@@ -206,68 +301,30 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
         </div>
       )}
       
-      <div style={{ 
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%)',
-      overflow: 'auto',
-      padding: 0
-    }}>
+      <div 
+        ref={scrollContainerRef}
+        style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 50%, #0d47a1 100%)',
+        overflow: 'auto',
+        padding: 0
+      }}>
       <div style={{
         maxWidth: 600, 
         margin: '0 auto', 
-        padding: '24px',
+        padding: showNavbar ? '84px 24px 24px 24px' : '20px 24px 24px 24px',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'flex-start'
+        justifyContent: 'flex-start',
+        transition: 'padding 0.3s ease-in-out'
       }}>
-        {/* 서비스명 상단 표시 */}
-        <div style={{ width: '100%', textAlign: 'center', marginBottom: 28, maxWidth: '560px', position: 'relative' }}>
-          {/* 뒤로가기 버튼 */}
-          <button
-            onClick={onBack}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              padding: '8px 12px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'all 0.2s'
-            }}
-          >
-            <span>←</span>
-            <span>돌아가기</span>
-          </button>
-
-          <h1 style={{ 
-            fontWeight: 'bold', 
-            fontSize: '2em', 
-            color: '#ffffff', 
-            letterSpacing: '0.02em', 
-            margin: 0,
-            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-          }}>
-            TripTo
-          </h1>
-        </div>
-      
-      {/* 설문 설명 박스 */}
-              {/* 설문 설명 박스 */}
+        {/* 설문 설명 박스 */}
         <div style={{
           width: '100%',
           maxWidth: '560px',
@@ -547,7 +604,7 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
                   value={answers[q.id] || ''}
                   onChange={(e) => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
                   min={q.min || 1}
-                  placeholder="숫자를 입력하세요"
+                  placeholder={q.id === 'q4' ? "예: 300 (300만원)" : "숫자를 입력하세요"}
                   style={{
                     width: '100%',
                     maxWidth: 400,

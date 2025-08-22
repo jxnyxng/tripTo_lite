@@ -674,9 +674,11 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
       }}>
         <div style={{
           fontSize: '1.8em',
-          fontWeight: 'bold',
+          fontWeight: '800',
           color: '#1976d2',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          fontFamily: '"Poppins", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+          letterSpacing: '-0.02em'
         }} onClick={onGoToMain || onReset}>
           TRIPTO
         </div>
@@ -778,7 +780,7 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
           {/* 여행지 클릭 안내 메시지 */}
           {cards.length > 0 && (
             <div style={{
-              width: '423px',
+              width: '423px',  // 카드와 동일한 너비
               maxWidth: '423px',
               background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
               border: '1.5px solid #1976d2',
@@ -786,7 +788,8 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
               padding: '16px',
               marginBottom: 16,
               textAlign: 'center',
-              boxShadow: '0 2px 8px rgba(25,118,210,0.1)'
+              boxShadow: '0 2px 8px rgba(25,118,210,0.1)',
+              boxSizing: 'border-box'  // 카드와 동일한 박스 사이징
             }}>
               <div style={{ 
                 fontSize: '1.1em', 
