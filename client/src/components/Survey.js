@@ -342,7 +342,7 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
           color: '#1976d2', 
           margin: '0 0 12px 0' 
         }}>
-          🌍 맞춤형 여행지 추천 설문조사
+          🌍 맞춤형 여행지 추천
         </h2>
         <p style={{ 
           fontSize: '1em', 
@@ -350,7 +350,7 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
           lineHeight: '1.6', 
           margin: '0 0 8px 0' 
         }}>
-          여러분의 여행 취향과 선호도를 알려주세요!
+          여행 취향과 상세 정보를 알려주세요!
         </p>
         <p style={{ 
           fontSize: '0.9em', 
@@ -358,7 +358,8 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
           lineHeight: '1.5', 
           margin: 0 
         }}>
-          다지선다 질문과 직접 입력 질문을 통해 <strong>가장 적합한 여행지</strong>를 추천해드립니다.
+          다지선다 <strong>기본 질문</strong>과 입력형 <strong>추가 질문</strong>으로<br/>
+          AI가 <strong>가장 적합한 여행지</strong>를 추천해드립니다.
         </p>
       </div>
       
@@ -445,7 +446,7 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
               color: '#666', 
               margin: '4px 0 0 0' 
             }}>
-              해당하는 항목을 모두 고르시오
+              해당하는 항목을 모두 골라주세요.
             </p>
           </div>
 
@@ -543,7 +544,7 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
               color: '#1976d2', 
               margin: 0 
             }}>
-              ✏️ 입력형 질문
+              ✏️ 추가 정보
             </h3>
             <p style={{ 
               fontSize: '0.9em', 
