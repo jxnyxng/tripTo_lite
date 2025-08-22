@@ -32,18 +32,23 @@ app = Flask(__name__)
 CORS(app)
 
 # YouTube API 검색 함수
-def search_youtube_videos(destination, max_results=5):
-    print(f"[YouTube 함수 시작]: destination='{destination}', max_results={max_results}")
+def search_youtube_videos(destination, companion=None, max_results=5):
+    print(f"[YouTube 함수 시작]: destination='{destination}', companion='{companion}', max_results={max_results}")
     
     if not YOUTUBE_API_KEY:
         print("YouTube API 키가 설정되지 않았습니다.")
         return []
     
     try:
+        # 동반자에 따른 검색 키워드 생성
+        companion_suffix = ""
+        if companion and companion != "기타":
+            companion_suffix = f" {companion}"
+        
         # 여러 검색 키워드로 시도
         search_queries = [
-            f"{destination} 여행 브이로그",
-            f"{destination} 여행",
+            f"{destination}{companion_suffix} 여행 브이로그",
+            f"{destination}{companion_suffix} 여행",
             f"{destination} travel vlog",
             f"{destination} 관광"
         ]
@@ -253,13 +258,14 @@ def youtube_search():
         data = request.get_json()
         print(f"[YouTube 검색 요청 받음]: {data}")
         destination = data.get('destination', '')
+        companion = data.get('companion', None)
         
         if not destination:
             print("[YouTube 오류]: 여행지가 제공되지 않음")
             return jsonify({'error': '여행지가 제공되지 않았습니다.'}), 400
         
-        print(f"[YouTube 검색 시작]: '{destination}'")
-        videos = search_youtube_videos(destination)
+        print(f"[YouTube 검색 시작]: '{destination}', 동반자: '{companion}'")
+        videos = search_youtube_videos(destination, companion)
         print(f"[YouTube 검색 완료]: {len(videos)}개 비디오 반환")
         return jsonify({'videos': videos})
         

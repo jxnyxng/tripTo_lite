@@ -536,6 +536,8 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
     };
   };
 
+  //동반자 정보로 잘 안나옴 영상이 없는 걸수도.....
+  
   // YouTube 비디오 검색 함수
   const searchYouTubeVideos = async (destination) => {
     if (youtubeVideos[destination]) {
@@ -544,10 +546,13 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
 
     setLoadingVideos(true);
     try {
+      // 동반자 정보 추출
+      const companion = surveyData?.companion || null;
+      
       const response = await fetch('/api/youtube-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ destination, maxResults: 5 })
+        body: JSON.stringify({ destination, companion, maxResults: 5 })
       });
 
       if (response.ok) {
