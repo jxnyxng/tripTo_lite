@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import surveyQuestions from './surveyQuestions';
-import ResultPage from './ResultPage';
-import MainPage from './MainPage';
+import ResultPage from './components/ResultPage';
+import MainPage from './components/MainPage';
 import Survey from './components/Survey';
 import useNavigation from './hooks/useNavigation';
 import { sendEmail } from './utils/emailUtils';
