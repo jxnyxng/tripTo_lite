@@ -146,14 +146,6 @@ function getRecommendationHtml(recommendation) {
                     <div class="reason-text" style="max-width: none;">${card.reason || '추천 이유가 제공되지 않았습니다.'}</div>
                   </div>
 
-                  <!-- 현지 사용 가능 금액 (있는 경우) -->
-                  ${card.local_price ? `
-                    <div class="info-section">
-                      <h3 style="margin: 0 0 10px 0; color: #1976d2;">💵 현지 사용 가능 금액</h3>
-                      <p style="margin: 0; font-weight: bold; color: #2e7d32;">${card.local_price}</p>
-                    </div>
-                  ` : ''}
-
                   <!-- 빠른 예약 링크 -->
                   <div class="quick-links">
                     <h3 style="margin: 0 0 15px 0; color: #333;">🔗 빠른 예약 링크</h3>
@@ -909,7 +901,7 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                   return (
                     <div>
                       1인당 항공료: <span style={{ fontWeight: 500 }}>{costs.discountedFlightCost}만원</span> 
-                      <span style={{ fontSize: '0.85em', color: '#666', marginLeft: 4 }}>(왕복, 최저가)</span>
+                      <span style={{ fontSize: '0.85em', color: '#666', marginLeft: 4 }}>(왕복)</span>
                     </div>
                   );
                 })()}
@@ -919,7 +911,7 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                   return (
                     <div>
                       1인당 숙박비: <span style={{ fontWeight: 500 }}>{costs.hotelCostPerPerson}만원</span> 
-                      <span style={{ fontSize: '0.85em', color: '#666', marginLeft: 4 }}>({nightsText}, 최저가)</span>
+                      <span style={{ fontSize: '0.85em', color: '#666', marginLeft: 4 }}>({nightsText})</span>
                     </div>
                   );
                 })()}
@@ -955,11 +947,31 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                             설정 예산: {userBudget}만원
                           </div>
                         )}
-                        {card.local_price && (
-                          <div style={{ fontSize: '0.9em', color: '#666', marginTop: 4 }}>
-                            현지 사용 가능 금액: {card.local_price}
-                          </div>
-                        )}
+                        {userBudget > 0 && (() => {
+                          const totalCostMatch = card.total_cost.match(/(\d+(?:\.\d+)?)/);
+                          const totalCost = totalCostMatch ? parseFloat(totalCostMatch[1]) : 0;
+                          const remaining = userBudget - totalCost;
+                          
+                          if (remaining > 0) {
+                            return (
+                              <div style={{ fontSize: '0.8em', color: '#2e7d32', marginTop: 4, fontWeight: '500' }}>
+                                💰 예산 여유: {remaining}만원
+                              </div>
+                            );
+                          } else if (remaining === 0) {
+                            return (
+                              <div style={{ fontSize: '0.8em', color: '#ff9800', marginTop: 4, fontWeight: '500' }}>
+                                ⚖️ 예산 딱 맞음
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div style={{ fontSize: '0.8em', color: '#f44336', marginTop: 4, fontWeight: '500' }}>
+                                ⚠️ 예산 부족: {Math.abs(remaining)}만원
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
                     );
                   }
@@ -994,6 +1006,29 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                             설정 예산: {userBudget}만원
                           </div>
                         )}
+                        {userBudget > 0 && (() => {
+                          const remaining = userBudget - costs.totalCost;
+                          
+                          if (remaining > 0) {
+                            return (
+                              <div style={{ fontSize: '0.8em', color: '#2e7d32', marginTop: 4, fontWeight: '500' }}>
+                                💰 예산 여유: {remaining}만원
+                              </div>
+                            );
+                          } else if (remaining === 0) {
+                            return (
+                              <div style={{ fontSize: '0.8em', color: '#ff9800', marginTop: 4, fontWeight: '500' }}>
+                                ⚖️ 예산 딱 맞음
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div style={{ fontSize: '0.8em', color: '#f44336', marginTop: 4, fontWeight: '500' }}>
+                                ⚠️ 예산 부족: {Math.abs(remaining)}만원
+                              </div>
+                            );
+                          }
+                        })()}
                       </div>
                     );
                   }
@@ -1161,16 +1196,12 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                       
                       // 제미나이가 제공한 total_cost가 있으면 우선 사용
                       if (selectedCard.total_cost) {
+                        const totalCostMatch = selectedCard.total_cost.match(/(\d+(?:\.\d+)?)/);
+                        const totalCost = totalCostMatch ? parseFloat(totalCostMatch[1]) : 0;
+                        const remaining = userBudget - totalCost;
+                        
                         return (
                           <>
-                            {selectedCard.local_price && (
-                              <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '6px' }}>
-                                <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>현지 사용 가능 금액</div>
-                                <div style={{ fontWeight: 'bold', color: '#1976d2' }}>
-                                  {selectedCard.local_price}
-                                </div>
-                              </div>
-                            )}
                             <div style={{ 
                               padding: '8px', 
                               backgroundColor: isBudgetExceeded ? '#ffebee' : '#fce4ec', 
@@ -1206,11 +1237,35 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                                 </div>
                               )}
                             </div>
+                            {userBudget > 0 && (
+                              <div style={{ 
+                                marginTop: '12px', 
+                                padding: '8px', 
+                                backgroundColor: remaining > 0 ? '#e8f5e8' : remaining === 0 ? '#fff3e0' : '#ffebee', 
+                                borderRadius: '6px',
+                                textAlign: 'center'
+                              }}>
+                                {remaining > 0 ? (
+                                  <div style={{ fontSize: '0.9em', color: '#2e7d32', fontWeight: '500' }}>
+                                    💰 예산 여유: {remaining}만원
+                                  </div>
+                                ) : remaining === 0 ? (
+                                  <div style={{ fontSize: '0.9em', color: '#ff9800', fontWeight: '500' }}>
+                                    ⚖️ 예산 딱 맞음
+                                  </div>
+                                ) : (
+                                  <div style={{ fontSize: '0.9em', color: '#f44336', fontWeight: '500' }}>
+                                    ⚠️ 예산 부족: {Math.abs(remaining)}만원
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </>
                         );
                       }
                       
                       // total_cost가 없으면 기존 계산 방식 사용
+                      const remaining = userBudget - costs.totalCost;
                       return (
                         <>
                           <div style={{ marginBottom: '12px', padding: '8px', backgroundColor: '#e3f2fd', borderRadius: '6px' }}>
@@ -1228,7 +1283,7 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                             borderRadius: '6px',
                             border: isBudgetExceeded ? '1px solid #ff5722' : 'none'
                           }}>
-                            <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>총 비용 (최저가 기준)</div>
+                            <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>총 비용 (예상 최저가 기준)</div>
                             <div style={{ 
                               fontSize: '1.1em', 
                               fontWeight: 'bold', 
@@ -1257,6 +1312,29 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                               </div>
                             )}
                           </div>
+                          {userBudget > 0 && (
+                            <div style={{ 
+                              marginTop: '12px', 
+                              padding: '8px', 
+                              backgroundColor: remaining > 0 ? '#e8f5e8' : remaining === 0 ? '#fff3e0' : '#ffebee', 
+                              borderRadius: '6px',
+                              textAlign: 'center'
+                            }}>
+                              {remaining > 0 ? (
+                                <div style={{ fontSize: '0.9em', color: '#2e7d32', fontWeight: '500' }}>
+                                  💰 예산 여유: {remaining}만원
+                                </div>
+                              ) : remaining === 0 ? (
+                                <div style={{ fontSize: '0.9em', color: '#ff9800', fontWeight: '500' }}>
+                                  ⚖️ 예산 딱 맞음
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: '0.9em', color: '#f44336', fontWeight: '500' }}>
+                                  ⚠️ 예산 부족: {Math.abs(remaining)}만원
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </>
                       );
                     })()}
