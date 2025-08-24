@@ -348,12 +348,17 @@ function MainPage({ onStartSurvey }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #ffffffff 0%, #fff4e6 100%)',
+        background: 'linear-gradient(rgba(245, 245, 245, 0.6), rgba(255, 255, 255, 0.6)), url("https://images.unsplash.com/photo-1570710891163-6d3b5c47248b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"), linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
         padding: '150px 20px 60px 20px', // 네비바 여유공간 확보
         boxSizing: 'border-box',
         position: 'relative',
         margin: 0
       }}>
+        
+        {/* 배경 오버레이 제거 - 위에서 처리함 */}
         <div style={{
           maxWidth: '1000px',
           textAlign: 'center',
@@ -362,7 +367,9 @@ function MainPage({ onStartSurvey }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          height: 'auto'
+          height: 'auto', 
+          position: 'relative',
+          zIndex: 1
         }}>
           <div style={{
             display: 'flex',
