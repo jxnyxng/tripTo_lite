@@ -6,6 +6,7 @@ from config.settings import print_config_status
 from services.gemini_service import analyze_with_gemini
 from services.youtube_service import search_youtube_videos
 from services.email_service import send_travel_email
+from services.travel_cost_service import travel_cost_service
 
 # Flask 앱 초기화
 app = Flask(__name__)
@@ -144,6 +145,103 @@ def send_email():
         return jsonify({
             'success': False,
             'error': f'이메일 전송 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
+
+@app.route('/api/travel-cost', methods=['POST'])
+def travel_cost():
+    """여행 경비 계산 API 엔드포인트"""
+    try:
+        data = request.get_json()
+        destination = data.get('destination')
+        days = data.get('days', 7)
+        budget_level = data.get('budget_level', 'mid')
+        travelers = data.get('travelers', 1)
+        
+        # 입력값 검증
+        if not destination:
+            return jsonify({'error': '여행지가 제공되지 않았습니다.'}), 400
+        
+        if budget_level not in ['budget', 'mid', 'luxury']:
+            return jsonify({'error': 'budget_level은 budget, mid, luxury 중 하나여야 합니다.'}), 400
+        
+        # Travel Cost API 호출
+        result = travel_cost_service.get_travel_cost(destination, days, budget_level, travelers)
+        
+        if result:
+            return jsonify(result)
+        else:
+            return jsonify({'error': 'Travel Cost API 연결에 실패했습니다.'}), 503
+        
+    except Exception as e:
+        print(f"[Travel Cost API 오류]: {str(e)}")
+        return jsonify({'error': f'여행 경비 계산 중 오류가 발생했습니다: {str(e)}'}), 500
+
+
+@app.route('/api/destination-info/<destination>', methods=['GET'])
+def destination_info(destination):
+    """여행지 정보 조회 API 엔드포인트"""
+    try:
+        # Travel Cost API 호출
+        result = travel_cost_service.get_destination_info(destination)
+        
+        if result:
+            return jsonify(result)
+        else:
+            return jsonify({'error': 'Travel Cost API 연결에 실패했습니다.'}), 503
+        
+    except Exception as e:
+        print(f"[Destination Info API 오류]: {str(e)}")
+        return jsonify({'error': f'여행지 정보 조회 중 오류가 발생했습니다: {str(e)}'}), 500
+
+
+@app.route('/api/compare-destinations', methods=['POST'])
+def compare_destinations():
+    """여행지 비교 API 엔드포인트"""
+    try:
+        data = request.get_json()
+        destinations = data.get('destinations')
+        days = data.get('days', 7)
+        budget_level = data.get('budget_level', 'mid')
+        
+        # 입력값 검증
+        if not destinations or not isinstance(destinations, list):
+            return jsonify({'error': '비교할 여행지 목록이 제공되지 않았습니다.'}), 400
+        
+        if budget_level not in ['budget', 'mid', 'luxury']:
+            return jsonify({'error': 'budget_level은 budget, mid, luxury 중 하나여야 합니다.'}), 400
+        
+        # Travel Cost API 호출
+        result = travel_cost_service.compare_destinations(destinations, days, budget_level)
+        
+        if result:
+            return jsonify(result)
+        else:
+            return jsonify({'error': 'Travel Cost API 연결에 실패했습니다.'}), 503
+        
+    except Exception as e:
+        print(f"[Compare Destinations API 오류]: {str(e)}")
+        return jsonify({'error': f'여행지 비교 중 오류가 발생했습니다: {str(e)}'}), 500
+
+
+@app.route('/api/travel-cost-status', methods=['GET'])
+def travel_cost_status():
+    """Travel Cost API 서버 상태 확인 엔드포인트"""
+    try:
+        is_available = travel_cost_service.is_available()
+        
+        return jsonify({
+            'available': is_available,
+            'message': 'Travel Cost API 사용 가능' if is_available else 'Travel Cost API 사용 불가',
+            'base_url': travel_cost_service.base_url
+        })
+        
+    except Exception as e:
+        print(f"[Travel Cost Status 오류]: {str(e)}")
+        return jsonify({
+            'available': False,
+            'message': f'상태 확인 중 오류 발생: {str(e)}',
+            'base_url': travel_cost_service.base_url
         }), 500
 
 

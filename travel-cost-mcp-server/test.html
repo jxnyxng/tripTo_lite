@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Travel Cost API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; }
+        button:hover { background: #005a84; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-left: 4px solid #007cba; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Travel Cost API Test</h1>
+        
+        <div class="section">
+            <h2>1. Health Check</h2>
+            <button onclick="testHealth()">Test Health</button>
+            <div id="health-result" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>2. Get Tools List</h2>
+            <button onclick="testTools()">Get Tools</button>
+            <div id="tools-result" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>3. Calculate Travel Cost</h2>
+            <input type="text" id="destination" placeholder="Destination (e.g., japan)" value="japan">
+            <input type="number" id="days" placeholder="Days" value="7">
+            <select id="budget">
+                <option value="budget">Budget</option>
+                <option value="mid" selected>Mid-range</option>
+                <option value="luxury">Luxury</option>
+            </select>
+            <input type="number" id="travelers" placeholder="Travelers" value="1">
+            <button onclick="testCalculate()">Calculate Cost</button>
+            <div id="calculate-result" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>4. Get Destination Info</h2>
+            <input type="text" id="dest-info" placeholder="Destination" value="japan">
+            <button onclick="testDestination()">Get Info</button>
+            <div id="destination-result" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>5. Compare Destinations</h2>
+            <input type="text" id="dest1" placeholder="Destination 1" value="japan">
+            <input type="text" id="dest2" placeholder="Destination 2" value="south_korea">
+            <input type="number" id="comp-days" placeholder="Days" value="7">
+            <select id="comp-budget">
+                <option value="budget">Budget</option>
+                <option value="mid" selected>Mid-range</option>
+                <option value="luxury">Luxury</option>
+            </select>
+            <button onclick="testCompare()">Compare</button>
+            <div id="compare-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                document.getElementById('health-result').innerHTML = 
+                    `<strong>Status:</strong> ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('health-result').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testTools() {
+            try {
+                const response = await fetch(`${API_BASE}/api/tools`);
+                const data = await response.json();
+                document.getElementById('tools-result').innerHTML = 
+                    `<strong>Status:</strong> ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('tools-result').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testCalculate() {
+            try {
+                const payload = {
+                    destination: document.getElementById('destination').value,
+                    days: parseInt(document.getElementById('days').value),
+                    budget_level: document.getElementById('budget').value,
+                    travelers: parseInt(document.getElementById('travelers').value)
+                };
+                
+                const response = await fetch(`${API_BASE}/api/calculate-cost`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                document.getElementById('calculate-result').innerHTML = 
+                    `<strong>Status:</strong> ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('calculate-result').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testDestination() {
+            try {
+                const destination = document.getElementById('dest-info').value;
+                const response = await fetch(`${API_BASE}/api/destination/${destination}`);
+                const data = await response.json();
+                document.getElementById('destination-result').innerHTML = 
+                    `<strong>Status:</strong> ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('destination-result').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+
+        async function testCompare() {
+            try {
+                const payload = {
+                    destinations: [
+                        document.getElementById('dest1').value,
+                        document.getElementById('dest2').value
+                    ],
+                    days: parseInt(document.getElementById('comp-days').value),
+                    budget_level: document.getElementById('comp-budget').value
+                };
+                
+                const response = await fetch(`${API_BASE}/api/compare-destinations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                document.getElementById('compare-result').innerHTML = 
+                    `<strong>Status:</strong> ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                document.getElementById('compare-result').innerHTML = 
+                    `<strong>Error:</strong> ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

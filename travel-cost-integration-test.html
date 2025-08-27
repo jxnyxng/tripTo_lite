@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TripTo Lite - Travel Cost Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; cursor: pointer; border-radius: 3px; }
+        button:hover { background: #005a84; }
+        .result { background: #f5f5f5; padding: 15px; margin: 10px 0; border-left: 4px solid #007cba; white-space: pre-wrap; font-family: monospace; }
+        input, select { padding: 8px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; }
+        .status-ok { color: green; font-weight: bold; }
+        .status-error { color: red; font-weight: bold; }
+        .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 TripTo Lite - Travel Cost Integration Test</h1>
+        
+        <div class="section">
+            <h2>🔌 API 서버 상태 확인</h2>
+            <button onclick="checkTravelCostStatus()">Travel Cost API 상태 확인</button>
+            <button onclick="checkMainServerStatus()">메인 서버 상태 확인</button>
+            <div id="status-result" class="result"></div>
+        </div>
+        
+        <div class="api-grid">
+            <div class="section">
+                <h2>💰 여행 경비 계산 (메인 서버)</h2>
+                <input type="text" id="main-destination" placeholder="Destination" value="japan">
+                <input type="number" id="main-days" placeholder="Days" value="7">
+                <select id="main-budget">
+                    <option value="budget">Budget</option>
+                    <option value="mid" selected>Mid-range</option>
+                    <option value="luxury">Luxury</option>
+                </select>
+                <input type="number" id="main-travelers" placeholder="Travelers" value="1">
+                <button onclick="testMainTravelCost()">계산하기</button>
+                <div id="main-cost-result" class="result"></div>
+            </div>
+            
+            <div class="section">
+                <h2>💰 여행 경비 계산 (직접 API)</h2>
+                <input type="text" id="direct-destination" placeholder="Destination" value="japan">
+                <input type="number" id="direct-days" placeholder="Days" value="7">
+                <select id="direct-budget">
+                    <option value="budget">Budget</option>
+                    <option value="mid" selected>Mid-range</option>
+                    <option value="luxury">Luxury</option>
+                </select>
+                <input type="number" id="direct-travelers" placeholder="Travelers" value="1">
+                <button onclick="testDirectTravelCost()">계산하기</button>
+                <div id="direct-cost-result" class="result"></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🏖️ 여행지 정보 조회</h2>
+            <input type="text" id="dest-info" placeholder="Destination" value="thailand">
+            <button onclick="testDestinationInfo()">정보 조회</button>
+            <div id="destination-info-result" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🆚 여행지 비교</h2>
+            <input type="text" id="compare-dest1" placeholder="Destination 1" value="japan">
+            <input type="text" id="compare-dest2" placeholder="Destination 2" value="thailand">
+            <input type="number" id="compare-days" placeholder="Days" value="7">
+            <select id="compare-budget">
+                <option value="budget">Budget</option>
+                <option value="mid" selected>Mid-range</option>
+                <option value="luxury">Luxury</option>
+            </select>
+            <button onclick="testCompareDestinations()">비교하기</button>
+            <div id="compare-result" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>🤖 Gemini 추천 (정확한 경비 포함)</h2>
+            <p>실제 여행 추천 워크플로우 테스트</p>
+            <button onclick="testGeminiRecommendation()">여행지 추천 받기</button>
+            <div id="gemini-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const MAIN_API = 'http://localhost:5005';
+        const DIRECT_API = 'http://localhost:3001';
+
+        async function checkTravelCostStatus() {
+            try {
+                const response = await fetch(`${MAIN_API}/api/travel-cost-status`);
+                const data = await response.json();
+                const statusClass = data.available ? 'status-ok' : 'status-error';
+                document.getElementById('status-result').innerHTML = 
+                    `<span class="${statusClass}">Travel Cost API: ${data.message}</span>\nBase URL: ${data.base_url}`;
+            } catch (error) {
+                document.getElementById('status-result').innerHTML = 
+                    `<span class="status-error">오류: ${error.message}</span>`;
+            }
+        }
+
+        async function checkMainServerStatus() {
+            try {
+                const response = await fetch(`${MAIN_API}/api/travel-cost-status`);
+                const statusClass = response.ok ? 'status-ok' : 'status-error';
+                document.getElementById('status-result').innerHTML += 
+                    `\n<span class="${statusClass}">메인 서버: ${response.ok ? '정상' : '오류'}</span>`;
+            } catch (error) {
+                document.getElementById('status-result').innerHTML += 
+                    `\n<span class="status-error">메인 서버 오류: ${error.message}</span>`;
+            }
+        }
+
+        async function testMainTravelCost() {
+            try {
+                const payload = {
+                    destination: document.getElementById('main-destination').value,
+                    days: parseInt(document.getElementById('main-days').value),
+                    budget_level: document.getElementById('main-budget').value,
+                    travelers: parseInt(document.getElementById('main-travelers').value)
+                };
+                
+                const response = await fetch(`${MAIN_API}/api/travel-cost`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                document.getElementById('main-cost-result').innerHTML = 
+                    `Status: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('main-cost-result').innerHTML = 
+                    `오류: ${error.message}`;
+            }
+        }
+
+        async function testDirectTravelCost() {
+            try {
+                const payload = {
+                    destination: document.getElementById('direct-destination').value,
+                    days: parseInt(document.getElementById('direct-days').value),
+                    budget_level: document.getElementById('direct-budget').value,
+                    travelers: parseInt(document.getElementById('direct-travelers').value)
+                };
+                
+                const response = await fetch(`${DIRECT_API}/api/calculate-cost`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                document.getElementById('direct-cost-result').innerHTML = 
+                    `Status: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('direct-cost-result').innerHTML = 
+                    `오류: ${error.message}`;
+            }
+        }
+
+        async function testDestinationInfo() {
+            try {
+                const destination = document.getElementById('dest-info').value;
+                const response = await fetch(`${MAIN_API}/api/destination-info/${destination}`);
+                const data = await response.json();
+                document.getElementById('destination-info-result').innerHTML = 
+                    `Status: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('destination-info-result').innerHTML = 
+                    `오류: ${error.message}`;
+            }
+        }
+
+        async function testCompareDestinations() {
+            try {
+                const payload = {
+                    destinations: [
+                        document.getElementById('compare-dest1').value,
+                        document.getElementById('compare-dest2').value
+                    ],
+                    days: parseInt(document.getElementById('compare-days').value),
+                    budget_level: document.getElementById('compare-budget').value
+                };
+                
+                const response = await fetch(`${MAIN_API}/api/compare-destinations`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                document.getElementById('compare-result').innerHTML = 
+                    `Status: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('compare-result').innerHTML = 
+                    `오류: ${error.message}`;
+            }
+        }
+
+        async function testGeminiRecommendation() {
+            try {
+                // 샘플 설문 데이터
+                const surveyData = {
+                    q0: '해외여행',
+                    q1: '자연경관',
+                    q2: '힐링여행',
+                    q4: '100',
+                    q4_1: '7',
+                    q11: '2'
+                };
+                
+                const response = await fetch(`${MAIN_API}/api/recommend`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(surveyData)
+                });
+                
+                const data = await response.json();
+                document.getElementById('gemini-result').innerHTML = 
+                    `Status: ${response.status}\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                document.getElementById('gemini-result').innerHTML = 
+                    `오류: ${error.message}`;
+            }
+        }
+
+        // 페이지 로드 시 자동으로 상태 확인
+        window.onload = function() {
+            checkTravelCostStatus();
+        };
+    </script>
+</body>
+</html>

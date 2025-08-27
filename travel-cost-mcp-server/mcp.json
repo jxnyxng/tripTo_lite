@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "travel-cost-predictor": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "/Users/kjy/DEV/tripTo_lite/travel-cost-mcp-server"
+    }
+  }
+}

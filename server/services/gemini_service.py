@@ -2,6 +2,7 @@ import requests
 import json
 import re
 from config.settings import GEMINI_API_KEY
+from services.travel_cost_service import travel_cost_service
 
 
 def analyze_with_gemini(survey_data):
@@ -41,25 +42,49 @@ def analyze_with_gemini(survey_data):
         if other_considerations and other_considerations.strip():
             priority_condition = f"【최우선 조건】 사용자의 특별 요청사항: '{other_considerations}' - 이 조건을 반드시 100% 충족하는 여행지만 추천해주세요. 다른 모든 조건보다 이 요청사항을 우선시하여 추천해주세요. "
 
+        # Travel Cost API 사용 가능 여부 확인
+        use_accurate_costs = travel_cost_service.is_available()
+        print(f"[Travel Cost API 상태]: {'사용 가능' if use_accurate_costs else '사용 불가 - 기본 로직 사용'}")
+
         # 프롬프트 생성
-        prompt = _build_prompt(priority_condition, important, travel_type, style, budget, nights, num_recommend)
+        prompt = _build_prompt(priority_condition, important, travel_type, style, budget, nights, num_recommend, use_accurate_costs)
         
         # Gemini API 호출
-        return _call_gemini_api(prompt)
+        result = _call_gemini_api(prompt)
+        
+        # 정확한 경비 정보가 사용 가능한 경우, 결과를 업데이트
+        if use_accurate_costs and result:
+            result = _enhance_with_accurate_costs(result, nights)
+        
+        return result
                 
     except Exception as e:
         return f"Gemini API 호출 오류: {str(e)}"
 
 
-def _build_prompt(priority_condition, important, travel_type, style, budget, nights, num_recommend):
+def _build_prompt(priority_condition, important, travel_type, style, budget, nights, num_recommend, use_accurate_costs=False):
     """Gemini AI용 프롬프트를 생성하는 내부 함수"""
+    cost_instruction = ""
+    if use_accurate_costs:
+        cost_instruction = (
+            f"💡 중요: 정확한 비용 데이터베이스가 연결되어 있습니다. "
+            f"추천 후 실제 정확한 비용으로 자동 업데이트됩니다. "
+            f"여행지 추천에 집중하되, 가능하면 다음 지역들을 우선 고려해주세요: "
+            f"일본, 한국, 중국, 태국, 베트남, 싱가포르, 말레이시아, 프랑스, 이탈리아, 독일, 미국, 캐나다. "
+        )
+    else:
+        cost_instruction = (
+            f"💡 비용 계산 원칙: 모든 여행지는 최저가 기준으로 계산해 주세요. "
+            f"항공료와 숙박비는 현실적인 최저가를 반영하되, 예산에 억지로 맞추려고 하지 마세요. "
+        )
+    
     return (
         f"당신은 여행 추천 전문가입니다. "
         f"{priority_condition}"
         f"사용자가 '{important}'를 가장 중요하게 생각하며, "
         f"여행 유형은 '{travel_type}'입니다. "
         f"여행 스타일은 '{style}', 예산은 '{budget}만원', 여행 기간은 '{nights}'입니다. "
-        f"💡 비용 계산 원칙: 모든 여행지는 최저가 기준으로 계산해 주세요. 항공료와 숙박비는 현실적인 최저가를 반영하되, 예산에 억지로 맞추려고 하지 마세요. "
+        f"{cost_instruction}"
         f"📊 예산 참고: 사용자 예산 '{budget}만원'을 참고하되, 최저가로도 예산을 초과할 경우 정확한 최저가 비용을 제공해 주세요. 예산 초과 여부는 클라이언트에서 판단합니다. "
         f"✈️ 항공료: 해당 목적지까지의 현실적인 최저가 항공료 (왕복 기준, 1인당)"
         f"🏨 숙박비: 현실적인 최저가 숙박비 (1박 기준, 1인당) - 게스트하우스, 호스텔, 저가 호텔 등 포함"
@@ -156,3 +181,225 @@ def _clean_json_response(result):
         }], ensure_ascii=False)
     
     return cleaned_result
+
+
+def _enhance_with_accurate_costs(gemini_result, nights):
+    """
+    Gemini 결과를 정확한 MCP 서버의 경비 데이터로 강화하는 함수
+    
+    Args:
+        gemini_result (str): Gemini AI 추천 결과 (JSON 문자열)
+        nights (str): 여행 일수
+        
+    Returns:
+        str: 정확한 경비 정보로 업데이트된 JSON 문자열
+    """
+    try:
+        # Gemini 결과 파싱
+        recommendations = json.loads(gemini_result)
+        if not isinstance(recommendations, list):
+            return gemini_result
+        
+        # 여행 일수 처리
+        try:
+            days = int(nights)
+        except (ValueError, TypeError):
+            days = 7  # 기본값
+        
+        updated_recommendations = []
+        
+        for rec in recommendations:
+            place = rec.get('place', '').lower()
+            
+            # MCP 서버에서 정확한 경비 정보 가져오기
+            print(f"[정확한 경비 조회 시도]: {place}")
+            
+            # 여행지 이름을 MCP 서버 키와 매칭
+            mcp_destination = _map_place_to_mcp_key(place)
+            
+            if mcp_destination:
+                # mid-range 예산으로 경비 계산
+                cost_data = travel_cost_service.get_travel_cost(
+                    destination=mcp_destination,
+                    days=days,
+                    budget_level="mid",
+                    travelers=1
+                )
+                
+                if cost_data and 'content' in cost_data:
+                    content = cost_data['content']
+                    if isinstance(content, list) and len(content) > 0:
+                        cost_info = content[0]
+                        
+                        # 정확한 경비 정보로 업데이트
+                        rec['flight'] = f"{cost_info.get('flights', 0)}만원"
+                        rec['hotel'] = f"{cost_info.get('accommodation_per_night', 0)}만원"
+                        rec['local_price'] = f"{cost_info.get('daily_expenses', 0) * days}만원"
+                        rec['total_cost'] = f"{cost_info.get('total_cost', 0)}만원"
+                        
+                        print(f"[정확한 경비 업데이트 성공]: {place} -> {mcp_destination}")
+                    else:
+                        print(f"[정확한 경비 데이터 없음]: {place}")
+                else:
+                    print(f"[정확한 경비 조회 실패]: {place}")
+            else:
+                print(f"[MCP 키 매칭 실패]: {place}")
+            
+            updated_recommendations.append(rec)
+        
+        return json.dumps(updated_recommendations, ensure_ascii=False)
+        
+    except Exception as e:
+        print(f"[정확한 경비 업데이트 오류]: {str(e)}")
+        return gemini_result
+
+
+def _map_place_to_mcp_key(place_name):
+    """
+    Gemini가 추천한 여행지 이름을 MCP 서버의 키로 매핑하는 함수
+    
+    Args:
+        place_name (str): Gemini가 추천한 여행지 이름
+        
+    Returns:
+        str: MCP 서버 키 또는 None
+    """
+    place_lower = place_name.lower()
+    
+    # 매핑 테이블 - MCP 서버가 지원하는 12개 국가만 포함
+    # 지원 국가: 일본, 태국, 베트남, 싱가포르, 말레이시아, 필리핀, 인도네시아, 프랑스, 이탈리아, 스페인, 미국, 캐나다
+    place_mapping = {
+        # 아시아 (7개국)
+        'japan': '일본',
+        '일본': '일본',
+        '도쿄': '일본',
+        'tokyo': '일본',
+        '오사카': '일본',
+        'osaka': '일본',
+        '교토': '일본',
+        'kyoto': '일본',
+        '후쿠오카': '일본',
+        'fukuoka': '일본',
+        '나고야': '일본',
+        'nagoya': '일본',
+        
+        'thailand': '태국',
+        '태국': '태국',
+        '방콕': '태국',
+        'bangkok': '태국',
+        '푸켓': '태국',
+        'phuket': '태국',
+        '치앙마이': '태국',
+        'chiang mai': '태국',
+        '파타야': '태국',
+        'pattaya': '태국',
+        
+        'vietnam': '베트남',
+        '베트남': '베트남',
+        '호치민': '베트남',
+        'ho chi minh': '베트남',
+        '하노이': '베트남',
+        'hanoi': '베트남',
+        '다낭': '베트남',
+        'da nang': '베트남',
+        '호이안': '베트남',
+        'hoi an': '베트남',
+        
+        'singapore': '싱가포르',
+        '싱가포르': '싱가포르',
+        
+        'malaysia': '말레이시아',
+        '말레이시아': '말레이시아',
+        '쿠알라룸푸르': '말레이시아',
+        'kuala lumpur': '말레이시아',
+        '페낭': '말레이시아',
+        'penang': '말레이시아',
+        
+        'philippines': '필리핀',
+        '필리핀': '필리핀',
+        '마닐라': '필리핀',
+        'manila': '필리핀',
+        '세부': '필리핀',
+        'cebu': '필리핀',
+        '보라카이': '필리핀',
+        'boracay': '필리핀',
+        
+        'indonesia': '인도네시아',
+        '인도네시아': '인도네시아',
+        '자카르타': '인도네시아',
+        'jakarta': '인도네시아',
+        '발리': '인도네시아',
+        'bali': '인도네시아',
+        '요그야카르타': '인도네시아',
+        'yogyakarta': '인도네시아',
+        
+        # 유럽 (3개국)
+        'france': '프랑스',
+        '프랑스': '프랑스',
+        '파리': '프랑스',
+        'paris': '프랑스',
+        '니스': '프랑스',
+        'nice': '프랑스',
+        '리옹': '프랑스',
+        'lyon': '프랑스',
+        
+        'italy': '이탈리아',
+        '이탈리아': '이탈리아',
+        '로마': '이탈리아',
+        'rome': '이탈리아',
+        '밀라노': '이탈리아',
+        'milan': '이탈리아',
+        '베니스': '이탈리아',
+        'venice': '이탈리아',
+        '피렌체': '이탈리아',
+        'florence': '이탈리아',
+        '나폴리': '이탈리아',
+        'naples': '이탈리아',
+        
+        'spain': '스페인',
+        '스페인': '스페인',
+        '마드리드': '스페인',
+        'madrid': '스페인',
+        '바르셀로나': '스페인',
+        'barcelona': '스페인',
+        '세비야': '스페인',
+        'seville': '스페인',
+        
+        # 아메리카 (2개국)
+        'united states': '미국',
+        'usa': '미국',
+        'us': '미국',
+        '미국': '미국',
+        '뉴욕': '미국',
+        'new york': '미국',
+        '로스앤젤레스': '미국',
+        'los angeles': '미국',
+        '라스베가스': '미국',
+        'las vegas': '미국',
+        '샌프란시스코': '미국',
+        'san francisco': '미국',
+        '시애틀': '미국',
+        'seattle': '미국',
+        '마이애미': '미국',
+        'miami': '미국',
+        '시카고': '미국',
+        'chicago': '미국',
+        
+        'canada': '캐나다',
+        '캐나다': '캐나다',
+        '토론토': '캐나다',
+        'toronto': '캐나다',
+        '밴쿠버': '캐나다',
+        'vancouver': '캐나다',
+        '몬트리올': '캐나다',
+        'montreal': '캐나다',
+        '오타와': '캐나다',
+        'ottawa': '캐나다'
+    }
+    
+    # 직접 매칭 시도
+    for key, value in place_mapping.items():
+        if key in place_lower:
+            return value
+    
+    return None
