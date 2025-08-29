@@ -29,7 +29,14 @@ def analyze():
         
         if recommendation:
             print("[분석 성공]: Gemini AI 분석 완료")
-            return jsonify({'recommendation': recommendation})
+            # JSON 문자열을 파싱해서 배열로 반환
+            try:
+                import json
+                recommendations_list = json.loads(recommendation)
+                return jsonify({'recommendations': recommendations_list})
+            except json.JSONDecodeError:
+                # 파싱 실패 시 원본 반환
+                return jsonify({'recommendation': recommendation})
         else:
             print("[분석 실패]: Gemini AI 분석 실패")
             return jsonify({'error': '분석을 생성할 수 없습니다.'}), 500

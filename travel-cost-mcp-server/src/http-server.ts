@@ -97,24 +97,68 @@ app.get('/api/tools', async (req, res) => {
 // 여행 경비 계산
 app.post('/api/calculate-cost', async (req, res) => {
   try {
-    const { destination, days, budget_level, travelers = 1 } = req.body;
+    const { 
+      destination, 
+      days, 
+      budget_level, 
+      travelers = 1, 
+      accommodation_type = '호텔',
+      total_budget,
+      spending_level
+    } = req.body;
 
     // 입력값 검증
-    if (!destination || !days || !budget_level) {
+    if (!destination || !days) {
       return res.status(400).json({ 
-        error: '필수 파라미터가 누락되었습니다: destination, days, budget_level' 
+        error: '필수 파라미터가 누락되었습니다: destination, days' 
       });
     }
 
-    if (!['budget', 'mid', 'luxury'].includes(budget_level)) {
+    // 예산 기반 계산과 레벨 기반 계산 구분
+    const isBudgetBased = total_budget && spending_level;
+    
+    if (!isBudgetBased && !budget_level) {
+      return res.status(400).json({ 
+        error: '예산 기반 계산(total_budget, spending_level) 또는 레벨 기반 계산(budget_level) 중 하나를 선택해야 합니다' 
+      });
+    }
+
+    if (!isBudgetBased && !['budget', 'mid', 'luxury'].includes(budget_level)) {
       return res.status(400).json({ 
         error: 'budget_level은 budget, mid, luxury 중 하나여야 합니다' 
       });
     }
 
+    if (isBudgetBased && !['가성비 지출', '적당히 지출', '모두 지출'].includes(spending_level)) {
+      return res.status(400).json({ 
+        error: 'spending_level은 가성비 지출, 적당히 지출, 모두 지출 중 하나여야 합니다' 
+      });
+    }
+
+    if (!['호텔', '게스트하우스', '리조트', '펜션'].includes(accommodation_type)) {
+      return res.status(400).json({ 
+        error: 'accommodation_type은 호텔, 게스트하우스, 리조트, 펜션 중 하나여야 합니다' 
+      });
+    }
+
+    const arguments_obj: any = { 
+      destination, 
+      days, 
+      travelers, 
+      accommodation_type 
+    };
+
+    // 예산 기반 계산인 경우
+    if (isBudgetBased) {
+      arguments_obj.total_budget = total_budget;
+      arguments_obj.spending_level = spending_level;
+    } else {
+      arguments_obj.budget_level = budget_level;
+    }
+
     const result = await callMCPServer('tools/call', {
       name: 'calculate_travel_cost',
-      arguments: { destination, days, budget_level, travelers }
+      arguments: arguments_obj
     });
 
     res.json(result);

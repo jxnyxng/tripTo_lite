@@ -13,6 +13,12 @@ const surveyQuestions = [
     min: 1
   },
   {
+    id: 'q4_2',
+    question: '예산 내에서 지출 수준을 선택하세요.',
+    type: 'select',
+    options: ['가성비 지출', '적당히 지출', '모두 지출']
+  },
+  {
     id: 'q1',
     question: '여행 목적을 선택하세요.',
     type: 'checkbox',
@@ -70,6 +76,12 @@ const surveyQuestions = [
     question: '추천받고 싶은 여행지 개수를 선택하세요.',
     type: 'select',
     options: ['1', '2', '3', '4', '5']
+  },
+  {
+    id: 'q12',
+    question: '대략적인 비용을 알아볼 숙박형태를 선택하세요.',
+    type: 'select',
+    options: ['호텔', '게스트하우스', '리조트', '펜션']
   }
 ];
 

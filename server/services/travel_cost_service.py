@@ -8,15 +8,18 @@ class TravelCostService:
     def __init__(self, base_url="http://localhost:3001"):
         self.base_url = base_url
     
-    def get_travel_cost(self, destination, days, budget_level="mid", travelers=1):
+    def get_travel_cost(self, destination, days, budget_level="mid", travelers=1, accommodation_type="호텔", total_budget=None, spending_level=None):
         """
         여행 경비를 계산하는 함수
         
         Args:
             destination (str): 여행지
             days (int): 여행 일수
-            budget_level (str): 예산 수준 (budget, mid, luxury)
+            budget_level (str): 예산 수준 (budget, mid, luxury) - 예산 기반이 아닌 경우
             travelers (int): 여행자 수
+            accommodation_type (str): 숙박 형태 (호텔, 게스트하우스, 리조트, 펜션)
+            total_budget (int): 총 예산 (만원 단위) - 예산 기반 계산시
+            spending_level (str): 지출 수준 (가성비 지출, 적당히 지출, 모두 지출) - 예산 기반 계산시
             
         Returns:
             dict: 계산된 여행 경비 정보
@@ -26,9 +29,16 @@ class TravelCostService:
             payload = {
                 "destination": destination,
                 "days": days,
-                "budget_level": budget_level,
-                "travelers": travelers
+                "travelers": travelers,
+                "accommodation_type": accommodation_type
             }
+            
+            # 예산 기반 계산 vs 레벨 기반 계산
+            if total_budget and spending_level:
+                payload["total_budget"] = total_budget
+                payload["spending_level"] = spending_level
+            else:
+                payload["budget_level"] = budget_level
             
             response = requests.post(url, json=payload, timeout=10)
             response.raise_for_status()

@@ -1,8 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
+import CustomModal from './CustomModal';
 
 // 추천 결과를 HTML 문자열로 변환하는 함수 (이메일용)
 function getRecommendationHtml(recommendation) {
-  const cards = parseRecommendation(recommendation);
+  let cards = [];
+  if (Array.isArray(recommendation)) {
+    cards = recommendation;
+  } else {
+    cards = parseRecommendation(recommendation);
+  }
   if (!cards.length) return '<div>추천 결과를 가져올 수 없습니다.</div>';
   
   return `
@@ -499,14 +505,57 @@ function getIataCode(str) {
 
 function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSent, loading, onReset, onGoToMain, surveyData }) {
   const [selectedIdx, setSelectedIdx] = useState(null);
+  const [showReRecommendModal, setShowReRecommendModal] = useState(false);
+  const [rememberSurvey, setRememberSurvey] = useState(false);
+  // 설문 캐시 저장
+  const saveSurveyCache = () => {
+    if (surveyData) {
+      localStorage.setItem('tripto_survey_cache', JSON.stringify(surveyData));
+    }
+  };
+
+  // 설문 캐시 불러오기
+  const loadSurveyCache = () => {
+    const cached = localStorage.getItem('tripto_survey_cache');
+    return cached ? JSON.parse(cached) : null;
+  };
+
+  // 다시 추천받기 버튼 클릭 시 모달 오픈
+  const handleReRecommendClick = () => {
+    setShowReRecommendModal(true);
+  };
+
+  // 모달 내 확인 버튼 클릭 시
+  const handleReRecommendConfirm = () => {
+    if (rememberSurvey) {
+      saveSurveyCache();
+    } else {
+      localStorage.removeItem('tripto_survey_cache');
+    }
+    setShowReRecommendModal(false);
+    onReset();
+  };
+
+  // 모달 내 취소 버튼 클릭 시
+  const handleReRecommendCancel = () => {
+    setShowReRecommendModal(false);
+  };
   const [showDetail, setShowDetail] = useState(false);
   const [origin, setOrigin] = useState('');
   const [hotelSite, setHotelSite] = useState('booking');
   const [isEmailSending, setIsEmailSending] = useState(false);
+  const [emailId, setEmailId] = useState('');
+  const [emailDomain, setEmailDomain] = useState('gmail.com');
+  const [customDomain, setCustomDomain] = useState('');
   const [youtubeVideos, setYoutubeVideos] = useState({});
   const [loadingVideos, setLoadingVideos] = useState(false);
   const detailRef = React.useRef();
-  const cards = parseRecommendation(recommendation);
+  let cards = [];
+  if (Array.isArray(recommendation)) {
+    cards = recommendation;
+  } else {
+    cards = parseRecommendation(recommendation);
+  }
 
   // 설문 데이터에서 필요한 정보 추출
   const nights = surveyData?.q5 || '3박'; // 여행 기간
@@ -720,44 +769,80 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
           TRIPTO
         </div>
         
-        {/* 이메일 입력 영역 - 네비바 중앙에 배치 */}
+        {/* 이메일 입력 영역 - 네비바 중앙에 배치 (아이디+도메인 분리, 직접입력 지원) */}
         {selectedIdx === null && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '8px',
             position: 'absolute',
             left: '50%',
             transform: 'translateX(-50%)'
           }}>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => onEmailChange(e.target.value)}
-              placeholder="이메일 주소를 입력하세요"
+              type="text"
+              value={emailId}
+              onChange={e => setEmailId(e.target.value)}
+              placeholder="아이디"
               style={{
                 padding: '8px 12px',
                 borderRadius: '6px',
                 border: '1px solid #ddd',
                 fontSize: '14px',
-                width: '200px'
+                width: '100px'
               }}
             />
+            <span>@</span>
+            {emailDomain === 'custom' && (
+              <input
+                type="text"
+                value={customDomain}
+                onChange={e => setCustomDomain(e.target.value)}
+                placeholder="도메인 입력"
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #ddd',
+                  fontSize: '14px',
+                  width: '120px'
+                }}
+              />
+            )}
+            <select
+              value={emailDomain}
+              onChange={e => setEmailDomain(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #ddd',
+                fontSize: '14px',
+                width: '120px'
+              }}
+            >
+              <option value="gmail.com">gmail.com</option>
+              <option value="naver.com">naver.com</option>
+              <option value="daum.net">daum.net</option>
+              <option value="kakao.com">kakao.com</option>
+              <option value="custom">직접 입력</option>
+            </select>
             <button
-              onClick={() => onSendEmail()}
-              disabled={emailSent || loading || !email.trim()}
+              onClick={() => {
+                const domain = emailDomain === 'custom' ? customDomain : emailDomain;
+                onSendEmail(`${emailId}@${domain}`);
+              }}
+              disabled={loading || !emailId.trim() || (emailDomain === 'custom' && !customDomain.trim())}
               style={{
                 padding: '8px 16px',
-                backgroundColor: emailSent || loading ? '#ccc' : '#1976d2',
+                backgroundColor: loading ? '#ccc' : '#1976d2',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
-                cursor: emailSent || loading ? 'not-allowed' : 'pointer',
+                cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
                 fontWeight: 'bold'
               }}
             >
-              {emailSent ? '전송완료' : loading ? '전송 중...' : '이메일로 결과 받기'}
+              {loading ? '전송 중...' : '이메일로 결과 받기'}
             </button>
           </div>
         )}
@@ -1077,19 +1162,47 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
           )}
           
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32, marginBottom: '2%' }}>
-            <button onClick={onReset} style={{ 
-              padding: '12px 32px', 
-              fontSize: '1.1em', 
-              borderRadius: 8, 
-              background: '#1976d2', 
-              color: '#fff', 
-              border: 'none', 
-              cursor: 'pointer', 
-              fontWeight: 'bold',
-              marginBottom: '30px'
-            }}>
+            <button 
+              onClick={handleReRecommendClick}
+              style={{ 
+                padding: '12px 32px', 
+                fontSize: '1.1em', 
+                borderRadius: 8, 
+                background: '#1976d2', 
+                color: '#fff', 
+                border: 'none', 
+                cursor: 'pointer', 
+                fontWeight: 'bold',
+                marginBottom: '30px'
+              }}
+            >
               다시 추천받기
             </button>
+            <CustomModal
+              open={showReRecommendModal}
+              title="다시 추천받기"
+              onClose={handleReRecommendCancel}
+              actions={[
+                <button key="confirm" onClick={handleReRecommendConfirm} style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 'bold', cursor: 'pointer' }}>확인</button>,
+                <button key="cancel" onClick={handleReRecommendCancel} style={{ background: '#eee', color: '#333', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 'bold', cursor: 'pointer' }}>취소</button>
+              ]}
+            >
+              <div style={{ fontSize: '1.05em', marginBottom: 12 }}>
+                기존에 사용자가 설문했던 내용을 기억할까요?<br/>
+                <label style={{ display: 'flex', alignItems: 'center', marginTop: 10 }}>
+                  <input type="checkbox" checked={rememberSurvey} onChange={e => setRememberSurvey(e.target.checked)} style={{ marginRight: 8 }} />
+                  설문 내용 기억하기 (다음 설문에 바로 반영)
+                </label>
+              </div>
+              {rememberSurvey && (
+                <div style={{ fontSize: '0.95em', color: '#1976d2', marginTop: 8 }}>
+                  설문 내용은 캐시에 저장되어 다음 설문 시작 시 자동으로 불러옵니다.<br/>
+                  <span style={{ color: '#888', fontSize: '0.92em' }}>
+                    (설문 시작 페이지에서 수정 가능합니다)
+                  </span>
+                </div>
+              )}
+            </CustomModal>
           </div>
         </div>
 
@@ -1208,11 +1321,11 @@ function ResultPage({ recommendation, email, onEmailChange, onSendEmail, emailSe
                               borderRadius: '6px',
                               border: isBudgetExceeded ? '1px solid #ff5722' : 'none'
                             }}>
-                              <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>총 예상 비용 (제미나이 계산)</div>
+                              <div style={{ fontSize: '0.95em', color: '#555', marginBottom: '6px' }}>총 예상 비용</div>
                               <div style={{ 
                                 fontSize: '1.1em', 
                                 fontWeight: 'bold', 
-                                color: isBudgetExceeded ? '#ff5722' : '#e91e63',
+                                color: isBudgetExceeded ? '#ff5722' : '#e91e63',  
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',

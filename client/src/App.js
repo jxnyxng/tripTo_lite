@@ -57,7 +57,9 @@ function App() {
         body: JSON.stringify(answers)
       });
       const data = await res.json();
-      setRecommendation(data.recommendation);
+      // recommendations 배열 또는 recommendation 문자열 모두 처리
+      const result = data.recommendations || data.recommendation || [];
+      setRecommendation(result);
       setSavedRecommendation(null);
       navigateTo('result', '/result');
     } catch (err) {

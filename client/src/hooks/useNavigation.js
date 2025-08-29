@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 const useNavigation = () => {
   const [currentPage, setCurrentPage] = useState('main'); // 항상 'main'으로 시작
 
-  // 강제로 메인 페이지 유지
+  // 페이지가 새로고침되거나 mount될 때 현재 URL에 따라 페이지 상태를 복원
   useEffect(() => {
-    console.log('강제로 메인 페이지 설정');
-    setCurrentPage('main');
-    window.history.replaceState({ page: 'main' }, '', '/');
+    const page = window.location.pathname === '/result' ? 'result' : 'main';
+    setCurrentPage(page);
+    window.history.replaceState({ page }, '', window.location.pathname);
   }, []);
 
   // 페이지 변경 시 스크롤을 상단으로 이동
@@ -28,9 +28,17 @@ const useNavigation = () => {
   };
 
   const setupBrowserNavigation = (recommendation, savedRecommendation, setSavedRecommendation, setRecommendation) => {
-    // 일시적으로 비활성화 - 메인 페이지 강제 유지
-    console.log('setupBrowserNavigation 비활성화됨');
-    return () => {}; // 빈 cleanup 함수 반환
+    // 브라우저 뒤로가기/앞으로가기 시 추천 결과 복원
+    const onPopState = (event) => {
+      const state = event.state;
+      if (state && state.page === 'result' && savedRecommendation) {
+        setRecommendation(savedRecommendation);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+    };
   };
 
   return {

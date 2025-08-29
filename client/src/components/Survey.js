@@ -2,6 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import surveyQuestions from '../surveyQuestions';
 
 function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
+  // 설문 캐시 자동 반영
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('tripto_survey_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // 캐시가 answers와 다를 때만 반영
+        if (JSON.stringify(parsed) !== JSON.stringify(answers)) {
+          setAnswers(parsed);
+        }
+      }
+    } catch {}
+  }, []);
   const [validationMessage, setValidationMessage] = useState('');
   const [showNavbar, setShowNavbar] = useState(true); // 네비바 표시 상태
   const scrollContainerRef = useRef(null); // 스크롤 컨테이너 참조
@@ -551,7 +564,7 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
               color: '#666', 
               margin: '4px 0 0 0' 
             }}>
-              직접 입력하거나 선택해주세요
+              더 정확한 추천을 위해 입력해주세요.
             </p>
           </div>
 
