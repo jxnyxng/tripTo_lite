@@ -83,9 +83,9 @@ tripTo_lite/
 └── LICENSE                   # MIT 라이선스
 ```
 
-### 📁 핵심 파일 구성 (최종 정리 완료)
+### 📁 핵심 파일 구성
 
-#### ✅ 실행 파일들 (8개)
+#### ✅ 실행 파일
 - **App.js**: 메인 애플리케이션 로직, 상태 관리, 페이지 라우팅
 - **components/MainPage.js**: 랜딩 페이지, 스크롤 기반 네비게이션
 - **components/Survey.js**: 설문 컴포넌트, 폼 검증, 로딩 화면
@@ -97,7 +97,6 @@ tripTo_lite/
 
 ## ⚡ React
 
-### ✅
 - **React 18**: (`react: ^18.0.0`)
 - **함수형 컴포넌트**: 모든 컴포넌트 함수형으로 구현
 - **Hooks 활용**: `useState`, `useEffect`, `useRef` 등 활용
