@@ -23,22 +23,20 @@
 - 언제든 다시 확인할 수 있는 개인 아카이브
 
 
-## 🎨 주요 화면
 
-### 📋 설문 페이지
-- 파란색 그라데이션 배경의 현대적인 디자인
-- 기본 질문과 추가 질문의 명확한 구분
-- 실시간 입력 검증 및 사용자 친화적 안내
+## 🎨 실제 서비스 화면 예시
 
-### ⏳ 로딩 화면
-- 3단계 프로세스 시각화 (설문 분석 → 데이터 매칭 → 결과 생성)
-- 부드러운 애니메이션과 진행 상황 표시
-- 사용자 대기 시간의 지루함 최소화
+<p align="center">
+	<img src="image_for_README/mainPage.png" alt="메인 페이지" width="400" />
+	<img src="image_for_README/survey.png" alt="설문 화면1" width="400" />
+	<img src="image_for_README/survey2.png" alt="설문 화면2" width="400" />
+	<img src="image_for_README/result.png" alt="추천 결과" width="400" />
+	<img src="image_for_README/resultDet.png" alt="추천 상세" width="400" />
+	<img src="image_for_README/email.png" alt="이메일 입력" width="400" />
+	<img src="image_for_README/youtube.png" alt="유튜브 영상 추천" width="400" />
+</p>
 
-### 🏆 결과 페이지
-- 추천 여행지와 상세한 설명
-- 각 여행지별 YouTube 영상 미리보기
-- 결과 이메일 전송 기능
+각 화면은 실제 서비스의 주요 기능과 UI를 보여줍니다.
 
 ## 🎯 사용법
 
