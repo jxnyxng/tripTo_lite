@@ -13,10 +13,10 @@ const surveyQuestions = [
     min: 1
   },
   {
-    id: 'q4_2',
-    question: '예산 내에서 원하는 지출 수준을 선택하세요.',
-    type: 'select',
-    options: ['가성비 지출', '적당히 지출', '모두 지출']
+  id: 'q4_2',
+  question: '예산 내에서 원하는 지출 수준을 선택하세요.',
+  type: 'select',
+  options: ['예산의 50%만 사용', '예산의 75%만 사용', '예산 모두 사용(100%)', '금액 상관없이 AI 추천 우선']
   },
   {
     id: 'q1',

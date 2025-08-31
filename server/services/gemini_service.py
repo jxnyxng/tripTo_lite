@@ -26,6 +26,8 @@ def analyze_with_gemini(survey_data):
         other_considerations = survey_data.get('q10', '')  # 기타 고려할 점 추가
         accommodation_cost_type = survey_data.get('q12', '호텔')  # 비용 계산용 숙박형태
         spending_level = survey_data.get('q4_2', '적당히 지출')  # 지출 수준 (기본값: 적당히 지출)
+        # '금액 상관없이 AI 추천 우선' 선택 시 예산/지출 수준 무시
+        no_budget_priority = (spending_level == 'no_budget_priority')
         
         # 여행 인원수 처리
         try:
@@ -74,8 +76,22 @@ def analyze_with_gemini(survey_data):
         return f"Gemini API 호출 오류: {str(e)}"
 
 
-def _build_prompt(priority_condition, important, travel_type, style, budget, nights, num_recommend, travelers=1, use_accurate_costs=False):
+def _build_prompt(priority_condition, important, travel_type, style, budget, nights, num_recommend, travelers=1, spending_level=None, use_accurate_costs=False):
     """Gemini AI용 프롬프트를 생성하는 내부 함수"""
+    # no_budget_priority 옵션이 들어오면 예산/지출 수준 무시하고 AI가 자유 추천
+    if locals().get('no_budget_priority', False):
+        return (
+            f"당신은 여행 추천 전문가입니다. "
+            f"{priority_condition}"
+            f"사용자가 '{important}'를 가장 중요하게 생각하며, "
+            f"여행 유형은 '{travel_type}'입니다. "
+            f"여행 스타일은 '{style}', 여행 기간은 '{nights}', 여행 인원은 '{travelers}명'입니다. "
+            f"비용이나 예산에 구애받지 말고, AI가 판단하는 최고의 여행지를 추천해 주세요. "
+            f"추천이유는 반드시 6줄 이상 상세하게 작성해 주세요. 해당 여행지의 특색, 사용자 선호도와의 연관성, 계절적 특징, 주요 관광지, 현지 문화, 음식 등을 포함하여 구체적이고 매력적으로 설명해 주세요. "
+            f"추천 결과는 반드시 아래와 같은 JSON 배열 형식으로만 반환해 주세요. 다른 설명이나 텍스트 없이 JSON만 출력하세요. JSON 키와 값은 반드시 큰따옴표를 사용해 주세요.\n"
+            f'[\n  {{\n    "place": "여행지명",\n    "flight": "항공권 최저가 (1인 왕복)",\n    "hotel": "숙박비 최저가 (1인 1박)",\n    "reason": "추천 이유 (6줄 이상 상세 작성)",\n    "local_price": "현지 최소 생활비 (전체 {travelers}명 {nights} 기준)",\n    "total_cost": "총 예상 비용 (전체 {travelers}명 {nights} 기준: 항공료×{travelers}+숙박비×{travelers}×{nights}+현지생활비)",\n    "airport_code": "IATA코드"\n  }}, ...\n]'
+        )
+    # 기존 로직 유지
     cost_instruction = ""
     if use_accurate_costs:
         cost_instruction = (
@@ -96,6 +112,7 @@ def _build_prompt(priority_condition, important, travel_type, style, budget, nig
         f"사용자가 '{important}'를 가장 중요하게 생각하며, "
         f"여행 유형은 '{travel_type}'입니다. "
         f"여행 스타일은 '{style}', 예산은 '{budget}만원', 여행 기간은 '{nights}', 여행 인원은 '{travelers}명'입니다. "
+        f"사용자가 선택한 지출 수준은 '{spending_level}'입니다. 반드시 이 수준에 맞는 여행지만 추천하세요. 예산을 초과하는 여행지는 추천하지 마세요. 만약 예산에 맞는 여행지가 없다면, 가장 저렴한 여행지 1곳만 추천하세요. "
         f"{cost_instruction}"
         f"📊 예산 참고: 사용자 예산 '{budget}만원'은 전체 {travelers}명의 총 예산입니다. 예산 초과 여부는 클라이언트에서 판단합니다. "
         f"✈️ 항공료: 해당 목적지까지의 현실적인 최저가 항공료 (왕복 기준, 1인당)"

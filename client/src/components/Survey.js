@@ -586,7 +586,12 @@ function Survey({ answers, setAnswers, onSubmit, loading, onBack }) {
               {q.type === 'select' && (
                 <select
                   value={answers[q.id] || ''}
-                  onChange={(e) => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                  onChange={(e) => {
+                    let value = e.target.value;
+                    // '금액 상관없이 AI 추천 우선' 선택 시 특별 값으로 변환
+                    if (value === '금액 상관없이 AI 추천 우선') value = 'no_budget_priority';
+                    setAnswers(prev => ({ ...prev, [q.id]: value }));
+                  }}
                   style={{
                     width: '100%',
                     maxWidth: 400,
