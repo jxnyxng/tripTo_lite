@@ -22,6 +22,18 @@
 - 분석 결과를 이메일로 전송
 - 언제든 다시 확인할 수 있는 개인 아카이브
 
+## 🛠️ 기술 스택
+
+### Frontend
+- **React 18**
+- **JavaScript ES6+**
+- **CSS-in-JS**
+
+### Backend  
+- **Flask**
+- **Google Gemini AI**
+- **YouTube Data API**
+- **SMTP**
 
 
 ## 🎨 실제 서비스 화면 예시
@@ -122,17 +134,3 @@ App.js (메인 컨트롤러)
 - 브라우저 히스토리 API 활용
 - 페이지별 상태 관리
 ```
- 
-## 🛠️ 기술 스택
-
-### Frontend
-- **React 18**
-- **JavaScript ES6+**
-- **CSS-in-JS**
-
-### Backend  
-- **Flask**
-- **Google Gemini AI**
-- **YouTube Data API**
-- **SMTP**
-
