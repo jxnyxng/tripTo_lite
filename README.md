@@ -32,11 +32,12 @@
 	<img src="image_for_README/survey2.png" alt="설문 화면2" width="400" />
 	<img src="image_for_README/result.png" alt="추천 결과" width="400" />
 	<img src="image_for_README/resultDet.png" alt="추천 상세" width="400" />
-	<img src="image_for_README/email.png" alt="이메일 입력" width="400" />
 	<img src="image_for_README/youtube.png" alt="유튜브 영상 추천" width="400" />
 </p>
-
-각 화면은 실제 서비스의 주요 기능과 UI를 보여줍니다.
+<p>
+	<img src="image_for_README/email.png" alt="이메일 입력" width="400"/>
+    - 이메일로 받기를 이용해 추천받은 여행지 카드를 이메일로 받아볼 수 있습니다.
+</p>
 
 ## 🎯 사용법
 
