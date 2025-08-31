@@ -22,6 +22,19 @@
 - 분석 결과를 이메일로 전송
 - 언제든 다시 확인할 수 있는 개인 아카이브
 
+
+## 서비스 화면
+
+<p align="center">
+	<img src="image_for_README/mainPage.png" alt="메인 페이지" width="400" />
+	<img src="image_for_README/survey.png" alt="설문 화면1" width="400" />
+	<img src="image_for_README/survey2.png" alt="설문 화면2" width="400" />
+	<img src="image_for_README/result.png" alt="추천 결과" width="400" />
+	<img src="image_for_README/resultDet.png" alt="추천 상세" width="400" />
+	<img src="image_for_README/youtube.png" alt="유튜브 영상 추천" width="400" />
+</p>
+
+
 ## 🛠️ 기술 스택
 
 ### Frontend
@@ -34,18 +47,6 @@
 - **Google Gemini AI**
 - **YouTube Data API**
 - **SMTP**
-
-
-## 🎨 실제 서비스 화면 예시
-
-<p align="center">
-	<img src="image_for_README/mainPage.png" alt="메인 페이지" width="400" />
-	<img src="image_for_README/survey.png" alt="설문 화면1" width="400" />
-	<img src="image_for_README/survey2.png" alt="설문 화면2" width="400" />
-	<img src="image_for_README/result.png" alt="추천 결과" width="400" />
-	<img src="image_for_README/resultDet.png" alt="추천 상세" width="400" />
-	<img src="image_for_README/youtube.png" alt="유튜브 영상 추천" width="400" />
-</p>
 
 <hr>
 
