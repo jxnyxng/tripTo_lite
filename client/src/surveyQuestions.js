@@ -14,7 +14,7 @@ const surveyQuestions = [
   },
   {
     id: 'q4_2',
-    question: '예산 내에서 지출 수준을 선택하세요.',
+    question: '예산 내에서 원하는 지출 수준을 선택하세요.',
     type: 'select',
     options: ['가성비 지출', '적당히 지출', '모두 지출']
   },

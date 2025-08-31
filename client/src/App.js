@@ -69,14 +69,14 @@ function App() {
   };
 
   // 이메일 전송 (utils 사용)
-  const handleSendEmail = async () => {
-    if (!email) {
+  const handleSendEmail = async (emailToSend) => {
+    if (!emailToSend) {
       alert('이메일을 입력하세요');
       return;
     }
     setLoading(true);
     try {
-      const result = await sendEmail(recommendation, email);
+      const result = await sendEmail(recommendation, emailToSend);
       if (result.success) {
         setEmailSent(true);
         alert(result.message);
