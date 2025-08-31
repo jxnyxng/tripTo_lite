@@ -37,8 +37,9 @@
 
 <hr>
 
-<p>
+<p align="center">
 	<img src="image_for_README/email.png" alt="이메일 입력" width="400"/>
+    <br>
     - 이메일로 받기를 이용해 추천받은 여행지 카드를 이메일로 받아볼 수 있습니다.
 </p>
 
